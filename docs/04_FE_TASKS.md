@@ -19,18 +19,18 @@
 ## PHASE 0 — 프로젝트 초기 세팅
 
 ### 0-1. 프로젝트 생성
-- [ ] `npx create-next-app@latest isa-etf-portfolio --typescript --app --src-dir`
-- [ ] Tailwind 설치 여부 → **No** 선택
-- [ ] GitHub 레포 생성 + 첫 커밋 (`git init`, `main` 브랜치)
+- [x] `npx create-next-app@latest isa-etf-portfolio --typescript --app --src-dir`
+- [x] Tailwind 설치 여부 → **No** 선택
+- [x] GitHub 레포 생성 + 첫 커밋 (`git init`, `main` 브랜치)
 - [ ] Vercel 연결 (GitHub 레포 import)
 
 ### 0-2. 패키지 설치
-- [ ] `npm install react-window @supabase/supabase-js @supabase/ssr rss-parser`
+- [x] `npm install react-window @supabase/supabase-js @supabase/ssr rss-parser`
   - ⚠️ `recharts` 설치 금지 — ETFPieChart는 SVG 직접 구현
   - ⚠️ `@supabase/ssr` 추가 — 서버/클라이언트 클라이언트 분리에 필수
-- [ ] `npm install --save-dev @storybook/nextjs storybook @types/react-window`
-- [ ] Storybook 초기화 (`npx storybook@latest init`)
-- [ ] `npm run storybook` 정상 실행 확인
+- [x] `npm install --save-dev @storybook/nextjs storybook @types/react-window`
+- [x] Storybook 초기화 (`npx storybook@latest init`)
+- [x] `npm run storybook` 정상 실행 확인
 
 ### 0-3. 폴더 구조 생성
 - [ ] `app/dashboard/_components/` 폴더 생성
@@ -240,7 +240,7 @@
 - [ ] `PriceText` 컴포넌트 활용 (빨강 색상)
 - [ ] `stories/TodayImpact.stories.tsx`
 
-### 5-5. `ETFPieChart` (SVG 직접 구현 ⭐ 면접 어필)
+### 5-5. `ETFPieChart` (SVG 직접 구현)
 - [ ] `app/portfolio/_components/ETFPieChart.tsx` — `'use client'`
 - [ ] ⚠️ **빈 상태 얼리 리턴 처리** ← **신규 (P1 NaN 가드)**
   ```tsx
