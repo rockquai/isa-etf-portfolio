@@ -43,30 +43,30 @@ HANKYUNG_RSS_URL=https://www.hankyung.com/feed/economy
 > Supabase 대시보드 > SQL Editor에서 순서대로 실행
 
 ### 1-1. 기본 테이블 생성
-- [ ] `etf_holdings` 테이블 생성
+- [x] `etf_holdings` 테이블 생성
 
 ```sql
 CREATE TABLE etf_holdings (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  ticker        TEXT NOT NULL,
-  avg_price     NUMERIC(10,2) NOT NULL,
-  current_price NUMERIC(10,2),
+  ticker        TEXT NOT NULL,              -- 'TIGER 미국배당다우존스'
+  avg_price     NUMERIC(10,2) NOT NULL,     -- 평단가 (원)
+  current_price NUMERIC(10,2),              -- 현재가 (Mock or 입력값)
   quantity      INTEGER NOT NULL DEFAULT 1,
   annual_dividend_per_share NUMERIC(10,2) DEFAULT 0,
-  dividend_growth_rate      NUMERIC(4,3)  DEFAULT 0.050,
+  dividend_growth_rate      NUMERIC(4,3)  DEFAULT 0.050,  -- 5%
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-- [ ] `transactions` 테이블 생성
+- [x] `transactions` 테이블 생성
 
 ```sql
 CREATE TABLE transactions (
   id        UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id   UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   etf_id    UUID REFERENCES etf_holdings(id) ON DELETE CASCADE,
-  price     NUMERIC(10,2) NOT NULL,
+  price     NUMERIC(10,2) NOT NULL,     -- 매수가
   quantity  INTEGER NOT NULL DEFAULT 1,
   date      DATE NOT NULL DEFAULT CURRENT_DATE,
   is_profit BOOLEAN,
@@ -74,29 +74,29 @@ CREATE TABLE transactions (
 );
 ```
 
-- [ ] `user_settings` 테이블 생성
+- [x] `user_settings` 테이블 생성
 
 ```sql
 CREATE TABLE user_settings (
   id                   UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id              UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
   goal_message         TEXT DEFAULT NULL,
-  goal_monthly_amount  INTEGER DEFAULT 500000,
+  goal_monthly_amount  INTEGER DEFAULT 500000,    -- 나만의 투자 다짐 문구 (최대 100자)
   daily_purchase_enabled BOOLEAN DEFAULT FALSE,
   user_tier            TEXT DEFAULT 'free' CHECK (user_tier IN ('free', 'pro')),
-  ai_call_count        INTEGER DEFAULT 0,
+  ai_call_count        INTEGER DEFAULT 0,         -- 이번 달 AI 호출 횟수
   ai_call_reset_at     TIMESTAMPTZ DEFAULT NOW(),
   created_at           TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-- [ ] `ai_usage_logs` 테이블 생성
+- [x] `ai_usage_logs` 테이블 생성
 
 ```sql
 CREATE TABLE ai_usage_logs (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  model         TEXT NOT NULL,
+  model         TEXT NOT NULL,               -- 'gpt-4o-mini' | 'claude-sonnet'
   input_tokens  INTEGER,
   output_tokens INTEGER,
   cost_usd      NUMERIC(10,6),
@@ -105,18 +105,17 @@ CREATE TABLE ai_usage_logs (
 ```
 
 ### 1-2. 추가 컬럼 (검토 반영 — 누락 컬럼)
-- [ ] `etf_holdings`에 `is_profit` Generated Column 추가
+- [x] `etf_holdings`에 `is_profit` Generated Column 추가
 
 ```sql
 ALTER TABLE etf_holdings
-  ADD COLUMN is_profit BOOLEAN
-    GENERATED ALWAYS AS (current_price >= avg_price) STORED;
+  ADD COLUMN is_profit BOOLEAN GENERATED ALWAYS AS (current_price >= avg_price) STORED;
 ```
 
-- [ ] 테이블 4개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
+- [x] 테이블 4개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
 
 ### 1-3. RLS (Row Level Security) 활성화
-- [ ] 4개 테이블 RLS 활성화
+- [x] 4개 테이블 RLS 활성화
 
 ```sql
 ALTER TABLE etf_holdings   ENABLE ROW LEVEL SECURITY;
@@ -125,7 +124,7 @@ ALTER TABLE user_settings   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_usage_logs  ENABLE ROW LEVEL SECURITY;
 ```
 
-- [ ] 각 테이블 본인 데이터 접근 정책 생성
+- [x] 각 테이블 본인 데이터 접근 정책 생성
 
 ```sql
 CREATE POLICY "users can manage own etf_holdings"
@@ -148,7 +147,7 @@ CREATE POLICY "users can manage own ai_usage_logs"
 - [ ] Supabase 대시보드 > Authentication > Policies에서 정책 4개 생성 확인
 
 ### 1-4. DB Function 생성 — AI 호출 Race Condition 방지 (P0)
-- [ ] `increment_ai_call` 함수 생성
+- [x] `increment_ai_call` 함수 생성
 
 ```sql
 CREATE OR REPLACE FUNCTION increment_ai_call(p_user_id UUID, p_limit INT)
@@ -198,11 +197,11 @@ SELECT * FROM increment_ai_call('00000000-0000-0000-0000-000000000000', 5);
 > ⚠️ 단일 클라이언트 금지 — 브라우저/서버/admin 3종 분리
 
 ### 2-1. 패키지 설치 확인
-- [ ] `@supabase/supabase-js` 설치 확인
-- [ ] `@supabase/ssr` 설치 확인 (`npm install @supabase/ssr`)
+- [x] `@supabase/supabase-js` 설치 확인
+- [x] `@supabase/ssr` 설치 확인 (`npm install @supabase/ssr`)
 
 ### 2-2. `lib/supabase.ts` 작성 — 3종 클라이언트 분리
-- [ ] 브라우저용 `createClient()` 작성 (Client Component 전용)
+- [x] 브라우저용 `createClient()` 작성 (Client Component 전용)
 
 ```typescript
 import { createBrowserClient } from '@supabase/ssr'
@@ -215,7 +214,7 @@ export function createClient() {
 }
 ```
 
-- [ ] 서버용 `createServerSupabaseClient()` 작성 (Server Component / Route Handler)
+- [x] 서버용 `createServerSupabaseClient()` 작성 (Server Component / Route Handler)
 
 ```typescript
 import { createServerClient } from '@supabase/ssr'
@@ -231,7 +230,7 @@ export function createServerSupabaseClient() {
 }
 ```
 
-- [ ] admin용 `createAdminClient()` 작성 (service_role, RLS 우회 필요 시)
+- [x] admin용 `createAdminClient()` 작성 (service_role, RLS 우회 필요 시)
 
 ```typescript
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
@@ -244,86 +243,15 @@ export function createAdminClient() {
 }
 ```
 
-- [ ] 기존 `export const supabase = createClient(...)` 단일 export 제거
+- [x] 기존 `export const supabase = createClient(...)` 단일 export 제거
 
 ### 2-3. Supabase 쿼리 함수 작성
-- [ ] `getETFHoldings(userId)` — 보유 종목 목록 조회
-
-```typescript
-export async function getETFHoldings(userId: string) {
-  const supabase = createServerSupabaseClient()
-  const { data, error } = await supabase
-    .from('etf_holdings')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
-  if (error) throw error
-  return data
-}
-```
-
-- [ ] `addETFHolding(userId, holding)` — 종목 추가
-- [ ] `addTransaction(userId, transaction)` — 매수 기록 + avg_price 재계산 (P1)
-
-```typescript
-export async function addTransaction(
-  userId: string,
-  transaction: { etf_id: string; price: number; quantity: number; date: string }
-) {
-  const supabase = createServerSupabaseClient()
-
-  // 1. 현재 보유 수량과 평단가 조회
-  const { data: holding } = await supabase
-    .from('etf_holdings')
-    .select('avg_price, quantity')
-    .eq('id', transaction.etf_id)
-    .eq('user_id', userId)
-    .single()
-
-  if (!holding) throw new Error('ETF holding not found')
-
-  // 2. 가중 평균 단가 재계산
-  const totalCost = holding.avg_price * holding.quantity
-    + transaction.price * transaction.quantity
-  const totalQuantity = holding.quantity + transaction.quantity
-  const newAvgPrice = Math.round((totalCost / totalQuantity) * 100) / 100
-
-  // 3. INSERT + UPDATE 동시 실행
-  const [txResult] = await Promise.all([
-    supabase
-      .from('transactions')
-      .insert({ ...transaction, user_id: userId })
-      .select()
-      .single(),
-    supabase
-      .from('etf_holdings')
-      .update({
-        avg_price: newAvgPrice,
-        quantity: totalQuantity,
-        current_price: transaction.price,
-      })
-      .eq('id', transaction.etf_id)
-      .eq('user_id', userId),
-  ])
-
-  if (txResult.error) throw txResult.error
-  return txResult.data
-}
-```
-
-- [ ] `saveGoalMessage(userId, message)` — 목표 문구 upsert
-- [ ] `getUserSettings(userId)` — 사용자 설정 조회
-- [ ] `initUserSettings(userId)` — 최초 로그인 시 user_settings row 생성
-
-```typescript
-export async function initUserSettings(userId: string) {
-  const supabase = createServerSupabaseClient()
-  const { error } = await supabase
-    .from('user_settings')
-    .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
-  if (error) throw error
-}
-```
+- [x] `getETFHoldings(userId)` — Server Component / page에서 직접 인라인 쿼리로 구현
+- [x] `addETFHolding(userId, holding)` — `app/actions/etf.ts` `addETFHoldingAction`으로 구현
+- [x] `addTransaction(userId, transaction)` — `app/actions/transaction.ts` `addTransactionAction`으로 구현 (avg_price 재계산 포함)
+- [x] `saveGoalMessage(userId, message)` — `app/actions/goal.ts` `saveGoalAction`으로 구현
+- [x] `getUserSettings(userId)` — dashboard/page.tsx에서 직접 인라인 쿼리로 구현
+- [x] `initUserSettings(userId)` — `app/auth/callback/route.ts`에서 upsert로 구현
 
 ---
 
@@ -336,47 +264,24 @@ export async function initUserSettings(userId: string) {
 - [ ] Redirect URL 확인: `https://{프로젝트}.supabase.co/auth/v1/callback`
 
 ### 3-2. Auth Callback Route 작성
-- [ ] `app/auth/callback/route.ts` 생성
-
-```typescript
-import { createServerSupabaseClient } from '@/lib/supabase'
-import { NextResponse } from 'next/server'
-
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-
-  if (code) {
-    const supabase = createServerSupabaseClient()
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error && data.user) {
-      // 최초 로그인 시 user_settings 초기화
-      await initUserSettings(data.user.id)
-      return NextResponse.redirect(`${origin}/dashboard`)
-    }
-  }
-
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`)
-}
-```
+- [x] `app/auth/callback/route.ts` 생성 — `exchangeCodeForSession` + `user_settings` upsert + `/dashboard` 리다이렉트
 
 - [ ] Supabase 대시보드 > Authentication > URL Configuration에 Redirect URL 등록
   - 로컬: `http://localhost:3000/auth/callback`
   - 프로덕션: `https://{vercel-domain}/auth/callback`
 
 ### 3-3. 인증 미들웨어 연동 확인
-- [ ] `middleware.ts`에서 Supabase 세션 기반 보호 경로 확인
-- [ ] 비로그인 시 `/login` 리다이렉트 동작 확인
-- [ ] 로그인 후 `/dashboard` 리다이렉트 동작 확인
+- [x] `proxy.ts`(구 `middleware.ts`)에서 Supabase 세션 기반 보호 경로 확인 — Next.js 16 컨벤션으로 파일명/함수명 변경 완료
+- [ ] 비로그인 시 `/login` 리다이렉트 동작 확인 (실기기 테스트 필요)
+- [ ] 로그인 후 `/dashboard` 리다이렉트 동작 확인 (실기기 테스트 필요)
 
 ---
 
 ## PHASE 4 — RSS 뉴스 BFF
 
 ### 4-1. `lib/news.ts` 작성
-- [ ] `rss-parser` import
-- [ ] Parser 인스턴스 — timeout, User-Agent, Accept 헤더 설정
+- [x] `rss-parser` import
+- [x] Parser 인스턴스 — timeout, User-Agent, Accept 헤더 설정
 
 ```typescript
 const parser = new Parser({
@@ -389,15 +294,15 @@ const parser = new Parser({
 })
 ```
 
-- [ ] `MOCK_FALLBACK_NEWS` 배열 정의 (`[Mock]` 접두사 포함)
-- [ ] `fetchNews()` 함수 작성 — try/catch + Mock 폴백 반환
-- [ ] 반환 타입 `{ data: NewsItem[], isMock: boolean }` 명시
+- [x] `MOCK_FALLBACK_NEWS` 배열 정의 (`[Mock]` 접두사 포함)
+- [x] `fetchNews()` 함수 작성 — try/catch + Mock 폴백 반환
+- [x] 반환 타입 `{ data: NewsItem[], isMock: boolean }` 명시
 
 ### 4-2. `app/api/news/route.ts` 작성
-- [ ] GET handler 작성
-- [ ] `fetchNews()` 직접 import (HTTP 재호출 금지)
-- [ ] `NextResponse.json(result)` 반환
-- [ ] 에러 시 500 응답 처리
+- [x] GET handler 작성
+- [x] `fetchNews()` 직접 import (HTTP 재호출 금지)
+- [x] `NextResponse.json(result)` 반환
+- [ ] 에러 시 500 응답 처리 확인
 
 ### 4-3. 뉴스 BFF 동작 확인
 - [ ] `npm run dev` 후 `GET /api/news` 응답 확인
@@ -410,7 +315,7 @@ const parser = new Parser({
 
 ### 5-1. `lib/llm-chain.ts` 작성
 
-- [ ] `summarizeNews(newsText: string)` — gpt-4o-mini 1단계 호출
+- [x] `summarizeNews(newsText: string)` — gpt-4o-mini 1단계 호출
 
 ```typescript
 // 목적: 뉴스 원문(~20,000토큰) → 핵심 키워드 3줄 요약(~1,000토큰)
@@ -439,7 +344,7 @@ export async function summarizeNews(newsText: string): Promise<string> {
 }
 ```
 
-- [ ] `generateBriefing(summary, holdings)` — Claude Sonnet 2단계 호출
+- [x] `generateBriefing(summary, holdings)` — Claude Sonnet 2단계 호출
 
 ```typescript
 // 목적: 요약문 + ETF 데이터 → 맞춤형 매수/매도 브리핑
@@ -450,23 +355,13 @@ export async function generateBriefing(
 ): Promise<string>
 ```
 
-- [ ] `MOCK_BRIEFING` 상수 정의 (면책 문구 포함)
-- [ ] `generateETFBriefing(newsItems, holdings, userTier, userId)` 메인 함수
-
-```typescript
-export async function generateETFBriefing(
-  newsItems: NewsItem[],
-  holdings: ETFHolding[],
-  userTier: 'free' | 'pro',
-  userId: string
-): Promise<{ result: string; tier: 'free' | 'pro' }>
-```
-
-  - [ ] `userTier === 'free'` → `MOCK_BRIEFING` 즉시 반환
-  - [ ] `userTier === 'pro'` → summarizeNews → generateBriefing 순차 호출
+- [x] `MOCK_BRIEFING` 상수 정의 (면책 문구 포함)
+- [x] `generateETFBriefing(newsItems, holdings, userTier)` 메인 함수
+  - [x] `userTier === 'free'` → `MOCK_BRIEFING` 즉시 반환
+  - [x] `userTier === 'pro'` → summarizeNews → generateBriefing 순차 호출
 
 ### 5-2. AI 비용 로깅 (fire-and-forget)
-- [ ] `generateETFBriefing` 내 `ai_usage_logs` INSERT 추가
+- [ ] `generateETFBriefing` 내 `ai_usage_logs` INSERT 추가 ← **미구현**
 - [ ] `await` 없이 `.then()` 체이닝으로 응답 지연 없이 로깅
 
 ```typescript
@@ -494,94 +389,35 @@ supabase.from('ai_usage_logs').insert({
 
 ### 6-1. `app/api/ai-briefing/route.ts` 작성 (P0 보안 필수)
 
-- [ ] `export const maxDuration = 60` route segment config 추가 (Vercel 타임아웃 대응)
-- [ ] ⚠️ **userId JWT 추출** — 클라이언트 수신 절대 금지
+- [x] `export const maxDuration = 60` route segment config 추가 (Vercel 타임아웃 대응)
+- [x] ⚠️ **userId JWT 추출** — `supabase.auth.getUser()`로 서버에서 추출 완료
+- [ ] ⚠️ Free 티어 제한 — `increment_ai_call` RPC 호출로 교체 필요 ← **현재 비원자적 SELECT→UPDATE 방식 사용 중 (Race Condition P0 미해결)**
 
 ```typescript
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-
-export async function POST(req: NextRequest) {
-  // 1. JWT 기반 인증 (클라이언트에서 userId 수신 금지)
-  const supabase = createRouteHandlerClient({ cookies })
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  const userId = session.user.id  // 서버에서 추출
-```
-
-- [ ] Free 티어 제한 — `increment_ai_call` RPC 호출 (Race Condition 방지)
-
-```typescript
-  // 2. 원자적 호출 횟수 증가 및 제한 확인
+  // 수정 필요: 현재 비원자적 → RPC로 교체
   const { data: rpcData } = await supabase.rpc('increment_ai_call', {
     p_user_id: userId,
-    p_limit: 5,  // FREE_MONTHLY_LIMIT
+    p_limit: 5,
   })
   if (!rpcData?.[0]?.allowed) {
     return NextResponse.json({ error: 'FREE_LIMIT_EXCEEDED' }, { status: 429 })
   }
 ```
 
-- [ ] `generateETFBriefing` 호출 및 응답 반환
-- [ ] 에러 시 500 응답 + Mock 폴백 반환
+- [x] `generateETFBriefing` 호출 및 응답 반환
+- [ ] 에러 시 500 응답 + Mock 폴백 반환 확인
 
 ### 6-2. `app/api/portfolio/route.ts` 작성 (P0 보안 필수)
 
-- [ ] ⚠️ **GET** — `userId` 쿼리 파라미터 수신 금지, JWT에서 추출
-
-```typescript
-export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies })
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const holdings = await getETFHoldings(session.user.id)
-  return NextResponse.json(holdings)
-}
-```
-
-- [ ] **POST** — ETF 종목 추가 (`addETFHolding`)
-- [ ] **DELETE** — ETF 종목 삭제 (user_id 조건 필수 포함)
+- [x] ⚠️ **GET** — JWT에서 userId 추출 완료
+- [x] **POST** — ETF 종목 추가 (`addETFHolding`)
+- [x] **DELETE** — ETF 종목 삭제 (user_id 조건 포함)
 
 ### 6-3. Server Action 작성
 
-- [ ] `app/actions/goal.ts` — 목표 문구 저장
-
-```typescript
-'use server'
-import { createServerSupabaseClient } from '@/lib/supabase'
-
-export async function saveGoalAction(message: string) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  await saveGoalMessage(user.id, message)
-}
-```
-
-- [ ] `app/actions/transaction.ts` — 매수 기록 (avg_price 재계산 포함)
-
-```typescript
-'use server'
-export async function addTransactionAction(etfId: string) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  // 오늘 날짜, 현재가 기준 1주 매수
-  const holding = await getETFHolding(user.id, etfId)
-  await addTransaction(user.id, {
-    etf_id: etfId,
-    price: holding.current_price,
-    quantity: 1,
-    date: new Date().toISOString().split('T')[0],
-  })
-}
-```
+- [x] `app/actions/goal.ts` — `saveGoalAction` 구현 완료
+- [x] `app/actions/transaction.ts` — `addTransactionAction` 구현 완료 (avg_price 재계산 포함)
+- [x] `app/actions/etf.ts` — `addETFHoldingAction` 구현 완료 ← **신규 추가**
 
 ---
 
@@ -620,8 +456,8 @@ export async function addTransactionAction(etfId: string) {
 ## PHASE 8 — Vercel 배포
 
 ### 8-1. Vercel 환경 변수 등록
-- [ ] Vercel 대시보드 > 프로젝트 > Settings > Environment Variables
-- [ ] 6개 환경 변수 전부 등록
+- [x] Vercel 대시보드 > 프로젝트 > Settings > Environment Variables
+- [ ] 6개 환경 변수 전부 등록 확인
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
@@ -667,7 +503,7 @@ HANKYUNG_RSS_URL
 
 ### 9-1. 비활성 일시정지 방지 — GitHub Actions keep-alive
 
-- [ ] `.github/workflows/supabase-keep-alive.yml` 파일 생성
+- [x] `.github/workflows/supabase-keep-alive.yml` 파일 생성
 
 ```yaml
 name: Supabase Keep Alive
@@ -699,22 +535,11 @@ jobs:
 
 ### 9-2. DB 백업 — `docs/schema.sql` 작성 및 커밋
 
-- [ ] `docs/schema.sql` 파일 생성 — 아래 순서로 전체 SQL 작성
-
-```sql
--- 1. 테이블 생성 (etf_holdings, transactions, user_settings, ai_usage_logs)
--- 2. 추가 컬럼 (is_profit, goal_monthly_amount, daily_purchase_enabled)
--- 3. RLS 활성화 (4개 테이블)
--- 4. RLS 정책 (4개 테이블)
--- 5. DB Function (increment_ai_call)
-```
-
-- [ ] `docs/schema.sql` Git 커밋 및 푸시
-- [ ] `docs/` 폴더 구조 최종 확인
+- [x] `docs/schema.sql` 파일 생성 — 테이블 + 추가 컬럼 + RLS + DB Function 전체 포함
 
 ```
 docs/
-├── schema.sql          ← 추가
+├── schema.sql          ← 완료
 ├── 01_PLANNING.md
 ├── 02_FE.md
 ├── 03_BE.md
@@ -722,14 +547,15 @@ docs/
 └── 05_BE_TASKS.md
 ```
 
+- [ ] `docs/schema.sql` Git 커밋 및 푸시
 - [ ] 복구 시나리오 셀프 테스트 — `schema.sql` 실행만으로 5분 안에 재구성 가능한지 확인
 
 ### 9-3. Mock 데이터 시연 가능 상태 유지 확인
 
-- [ ] `lib/mock/etf.ts` — 5개 종목, 현실적인 가격/배당 데이터로 최신화
-- [ ] `lib/mock/transactions.ts` — 50개 거래 내역, 날짜 역순 정렬 확인
-- [ ] `lib/mock/news.ts` — `[Mock]` 접두사 포함, 5개 뉴스
-- [ ] `lib/mock/briefing.ts` — 면책 문구 포함 확인
+- [x] `lib/mock/etf.ts` — 5개 종목 Mock 데이터 유지
+- [x] `lib/mock/transactions.ts` — 50개 거래 내역 Mock
+- [x] `lib/mock/news.ts` — `[Mock]` 접두사 포함 뉴스 5개
+- [x] `lib/mock/briefing.ts` — 면책 문구 포함 확인
 - [ ] DB 연결 없이 Mock 데이터만으로 대시보드 전체 시연 가능한지 확인
   - `isMock: true` 상태에서 뉴스 피드 정상 노출
   - Free 티어 Mock 브리핑 정상 노출
@@ -741,16 +567,16 @@ docs/
 
 | Phase | 내용 | 상태 |
 |---|---|---|
-| 0 | Supabase 프로젝트 세팅 | ⬜ 미시작 |
-| 1 | Supabase 스키마 구성 | ⬜ 미시작 |
-| 2 | Supabase 클라이언트 구성 | ⬜ 미시작 |
-| 3 | Supabase Auth 설정 | ⬜ 미시작 |
-| 4 | RSS 뉴스 BFF | ⬜ 미시작 |
-| 5 | LLM 체이닝 파이프라인 | ⬜ 미시작 |
-| 6 | Route Handler 구현 | ⬜ 미시작 |
+| 0 | Supabase 프로젝트 세팅 | ✅ 완료 |
+| 1 | Supabase 스키마 구성 | ✅ 완료 (Policies 대시보드 확인 필요) |
+| 2 | Supabase 클라이언트 구성 | ✅ 완료 |
+| 3 | Supabase Auth 설정 | ⏳ 진행중 (OAuth Provider 설정 + Redirect URL 등록 필요) |
+| 4 | RSS 뉴스 BFF | ✅ 완료 (실기기 테스트 필요) |
+| 5 | LLM 체이닝 파이프라인 | ⏳ 진행중 (AI 비용 로깅 미구현) |
+| 6 | Route Handler 구현 | ⏳ 진행중 (increment_ai_call RPC 교체 필요 — P0) |
 | 7 | 통합 테스트 | ⬜ 미시작 |
-| 8 | Vercel 배포 | ⬜ 미시작 |
-| 9 | Free 플랜 운영 대응 | ⬜ 미시작 |
+| 8 | Vercel 배포 | ⏳ 진행중 (환경변수 확인 + vercel.json + Redirect URL 필요) |
+| 9 | Free 플랜 운영 대응 | ⏳ 진행중 (GitHub Secrets 등록 + schema.sql 커밋 필요) |
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
 

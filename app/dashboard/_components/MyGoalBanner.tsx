@@ -91,7 +91,10 @@ export default function MyGoalBanner({ initialGoal }: MyGoalBannerProps) {
 
   return (
     <section className={styles.wrapper} aria-label="투자 다짐 배너">
-      <p className={styles.emptyText}>나만의 투자 다짐을 입력해보세요 💪</p>
+      <p className={styles.emptyText}>
+        나만의 투자 다짐을 입력해 보세요 💪 <br />
+        예) 7년후 20주년 BTS 콘서트 위해 ETF주 사자!
+      </p>
       <button type="button" onClick={handleEdit} className={styles.addBtn} aria-label="투자 다짐 추가">
         + 다짐 추가하기
       </button>

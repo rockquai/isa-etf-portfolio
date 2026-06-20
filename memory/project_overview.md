@@ -8,8 +8,6 @@ metadata:
 주린이(초보 투자자) 대상 ISA ETF 포트폴리오 관리 웹뷰 서비스.
 매일 아침 뉴스 → AI 브리핑 → ETF 1주 매수 루틴 앱.
 
-**Why:** 포트폴리오용 프로젝트 (이력서 제출 목적)
-
 **기술 스택:**
 - Next.js 14 App Router (Server Component 적극 활용)
 - TypeScript strict mode

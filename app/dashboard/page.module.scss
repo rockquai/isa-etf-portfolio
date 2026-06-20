@@ -12,10 +12,23 @@
   gap: 2px;
 }
 
+.greetingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .greeting {
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
+}
+
+.date {
+  font-size: var(--font-size-label);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .subGreeting {

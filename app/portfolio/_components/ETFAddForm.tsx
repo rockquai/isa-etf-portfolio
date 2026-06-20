@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { addETFHoldingAction } from '@/app/actions/etf'
 import Button from '@/components/Button/Button'
 import styles from './ETFAddForm.module.scss'
 
@@ -14,7 +15,7 @@ type FormValues = {
 const INITIAL: FormValues = { ticker: '', avgPrice: '', quantity: '1', annualDividendPerShare: '' }
 
 type ETFAddFormProps = {
-  onAdd: (data: {
+  onAdd?: (data: {
     ticker: string
     avgPrice: number
     quantity: number
@@ -49,14 +50,11 @@ export default function ETFAddForm({ onAdd }: ETFAddFormProps) {
       return
     }
 
+    const payload = { ticker: values.ticker.trim(), avgPrice, quantity, annualDividendPerShare }
+
     setIsLoading(true)
     try {
-      await onAdd({
-        ticker: values.ticker.trim(),
-        avgPrice,
-        quantity,
-        annualDividendPerShare,
-      })
+      await (onAdd ? onAdd(payload) : addETFHoldingAction(payload))
       setValues(INITIAL)
     } catch {
       setError('저장에 실패했어요. 다시 시도해 주세요.')

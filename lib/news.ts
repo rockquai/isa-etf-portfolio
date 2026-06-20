@@ -15,7 +15,7 @@ const RSS_URL = process.env.HANKYUNG_RSS_URL ?? 'https://www.hankyung.com/feed/e
 export async function fetchNews(): Promise<{ data: NewsItem[]; isMock: boolean }> {
   try {
     const feed = await parser.parseURL(RSS_URL)
-    const data: NewsItem[] = feed.items.slice(0, 5).map((item) => ({
+    const data: NewsItem[] = feed.items.slice(0, 25).map((item) => ({
       title: item.title ?? '',
       link: item.link ?? '#',
       pubDate: item.pubDate ?? new Date().toISOString(),

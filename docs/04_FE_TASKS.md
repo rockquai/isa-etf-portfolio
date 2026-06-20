@@ -365,12 +365,12 @@
 
 ### 7-8. Supabase 연동
 - [x] Supabase 프로젝트 생성 및 환경변수 입력
-- [ ] SQL Editor에서 스키마 실행 (`03_BE.md` 참고)
-- [ ] `increment_ai_call` DB Function 실행
-- [ ] `user_settings` 초기화 로직
-- [ ] `ETFAddForm` → Supabase INSERT 연동
-- [ ] `BuyRecordButton` → Supabase INSERT 실제 연결 확인
-- [ ] `MyGoalBanner` → Supabase upsert 실제 연결 확인
+- [x] SQL Editor에서 스키마 실행 (`03_BE.md` 참고)
+- [x] `increment_ai_call` DB Function 실행
+- [x] `user_settings` 초기화 로직 — `auth/callback/route.ts`에서 최초 로그인 시 upsert
+- [x] `ETFAddForm` → Supabase INSERT 연동 — `app/actions/etf.ts` 생성, `portfolio/page.tsx` Server Component 전환
+- [x] `BuyRecordButton` → Supabase INSERT 실제 연결 확인 — `addTransactionAction` 연결 완료, `dashboard/page.tsx` 실제 ETF ID 로드
+- [x] `MyGoalBanner` → Supabase upsert 실제 연결 확인 — `saveGoalAction` 연결 완료, `dashboard/page.tsx` goal_message 로드
 
 ---
 
@@ -425,12 +425,6 @@
 - [ ] Storybook 링크
 - [ ] Vercel 배포 링크
 
-### 9-3. 이력서 제출 준비
-- [ ] Vercel 배포 URL 최종 동작 확인
-- [ ] Storybook GitHub Pages URL 확인
-- [ ] 유튜브 3분 데모 영상 촬영 + 업로드
-- [ ] 이력서 프로젝트 항목에 GitHub + Vercel + Storybook + 유튜브 링크 4종 첨부
-
 ---
 
 ## PHASE 10 — 인증 플로우 ← **신규 Phase**
@@ -465,10 +459,10 @@
 | 4 | 앱 레이아웃 뼈대 | ✅ 완료 |
 | 5 | 핵심 기능 컴포넌트 | ✅ 완료 |
 | 6 | 대시보드 화면 조립 | ✅ 완료 |
-| 7 | API 연동 컴포넌트 | ⏳ 진행중 (코드 완료, Supabase 연결 필요) |
+| 7 | API 연동 컴포넌트 | ✅ 완료 |
 | 8 | 완성도 & 접근성 | ⬜ 미시작 |
 | 9 | Storybook 배포 & README | ⬜ 미시작 |
-| 10 | 인증 플로우 | ⏳ 진행중 (코드 완료, Supabase 연결 필요) |
+| 10 | 인증 플로우 | ✅ 완료 |
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
 

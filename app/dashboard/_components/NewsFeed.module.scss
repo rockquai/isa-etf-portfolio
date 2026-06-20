@@ -1,8 +1,50 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   margin-bottom: 8px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batchIndicator {
+  font-size: var(--font-size-label);
+  color: var(--color-text-secondary);
+}
+
+.refreshBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+
+  &:hover {
+    background: var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  &:active {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease, background 0.15s;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-stock-up);
+    outline-offset: 2px;
+  }
 }
 
 .title {
@@ -55,10 +97,12 @@
 }
 
 .newsTitle {
+  overflow: hidden;
   font-size: var(--font-size-body);
   color: var(--color-text-primary);
   line-height: 1.4;
-  word-break: keep-all;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .newsDate {

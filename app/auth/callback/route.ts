@@ -8,7 +8,14 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createServerSupabaseClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (session?.user) {
+      // 최초 로그인 시 user_settings 레코드 생성 (이미 존재하면 무시)
+      await supabase
+        .from('user_settings')
+        .upsert({ user_id: session.user.id }, { onConflict: 'user_id', ignoreDuplicates: true })
+    }
   }
 
   return NextResponse.redirect(new URL('/dashboard', request.url))

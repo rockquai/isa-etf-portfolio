@@ -1,7 +1,4 @@
-'use client'
-
-import { useState } from 'react'
-import { MOCK_ETF_HOLDINGS } from '@/lib/mock/etf'
+import { createServerSupabaseClient } from '@/lib/supabase'
 import { MOCK_TRANSACTIONS } from '@/lib/mock/transactions'
 import type { ETFHolding } from '@/types/etf'
 import ETFPieChart from './_components/ETFPieChart'
@@ -10,23 +7,35 @@ import TransactionHistory from './_components/TransactionHistory'
 import ETFAddForm from './_components/ETFAddForm'
 import styles from './page.module.scss'
 
-export default function PortfolioPage() {
-  const [holdings, setHoldings] = useState<ETFHolding[]>(MOCK_ETF_HOLDINGS)
+export const dynamic = 'force-dynamic'
 
-  async function handleAddETF(data: {
-    ticker: string
-    avgPrice: number
-    quantity: number
-    annualDividendPerShare: number
-  }) {
-    const newHolding: ETFHolding = {
-      id: `etf-${Date.now()}`,
-      ...data,
-      currentPrice: data.avgPrice,
-      dividendGrowthRate: 0.05,
-      isProfit: false,
+export default async function PortfolioPage() {
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let holdings: ETFHolding[] = []
+
+  if (user) {
+    const { data } = await supabase
+      .from('etf_holdings')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at')
+
+    if (data) {
+      holdings = data.map((row) => ({
+        id: row.id,
+        ticker: row.ticker,
+        avgPrice: Number(row.avg_price),
+        currentPrice: Number(row.current_price ?? row.avg_price),
+        quantity: row.quantity,
+        annualDividendPerShare: Number(row.annual_dividend_per_share),
+        dividendGrowthRate: Number(row.dividend_growth_rate),
+        isProfit: row.is_profit ?? false,
+      }))
     }
-    setHoldings((prev) => [...prev, newHolding])
   }
 
   return (
@@ -56,7 +65,7 @@ export default function PortfolioPage() {
         )}
       </section>
 
-      <ETFAddForm onAdd={handleAddETF} />
+      <ETFAddForm />
 
       <TransactionHistory transactions={MOCK_TRANSACTIONS} />
     </main>
