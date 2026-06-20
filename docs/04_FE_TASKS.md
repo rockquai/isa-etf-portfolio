@@ -364,7 +364,7 @@
 - [x] `createAdminClient()` — service_role 키 전용
 
 ### 7-8. Supabase 연동
-- [ ] Supabase 프로젝트 생성 및 환경변수 입력
+- [x] Supabase 프로젝트 생성 및 환경변수 입력
 - [ ] SQL Editor에서 스키마 실행 (`03_BE.md` 참고)
 - [ ] `increment_ai_call` DB Function 실행
 - [ ] `user_settings` 초기화 로직
