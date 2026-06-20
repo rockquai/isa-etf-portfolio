@@ -1,4 +1,7 @@
 import { Suspense } from 'react'
+
+// 빌드 시점이 아닌 요청 시점에 렌더링 (RSS fetch, Supabase 인증 등 런타임 의존)
+export const dynamic = 'force-dynamic'
 import { MOCK_ETF_HOLDINGS } from '@/lib/mock/etf'
 import { MOCK_BRIEFING } from '@/lib/mock/briefing'
 import { calcAllProjections, getProjectionLabel } from '@/lib/dividend-calculator'
