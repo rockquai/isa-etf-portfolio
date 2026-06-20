@@ -1,0 +1,7 @@
+.price {
+  font-weight: var(--font-weight-bold);
+}
+
+/* 한국 금융 컨벤션: 상승=빨강, 하락=파랑 */
+.up   { color: var(--color-stock-up); }
+.down { color: var(--color-stock-down); }

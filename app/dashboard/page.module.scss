@@ -1,0 +1,25 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 72px);
+  min-height: 100dvh;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.greeting {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.subGreeting {
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  word-break: keep-all;
+}

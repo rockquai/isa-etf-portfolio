@@ -1,0 +1,35 @@
+@use './tokens';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.news-content,
+.etf-ticker-code,
+.dividend-value,
+.price-value {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.bottom-sheet-handle,
+.app-nav-bar,
+.tab-bar {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

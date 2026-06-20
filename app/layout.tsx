@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import '@/styles/globals.scss'
+import { ToastProvider } from '@/components/Toast/ToastContext'
+import BottomNav from '@/components/BottomNav/BottomNav'
 
 export const metadata: Metadata = {
   title: '주린이 루틴 정착을 위한 ISA ETF 포트폴리오 관리 웹뷰 서비스',
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <ToastProvider>
+          {children}
+          <BottomNav />
+        </ToastProvider>
+      </body>
     </html>
   )
 }

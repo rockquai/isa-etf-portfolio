@@ -1,0 +1,23 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+}
+
+.badge--up {
+  color: var(--color-stock-up);
+  background: #fff5f5;
+}
+
+.badge--down {
+  color: var(--color-stock-down);
+  background: #ebf8ff;
+}
+
+.badge--neutral {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+}
