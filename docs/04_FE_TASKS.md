@@ -28,6 +28,7 @@
 - [x] `npm install react-window @supabase/supabase-js @supabase/ssr rss-parser`
   - ⚠️ `recharts` 설치 금지 — ETFPieChart는 SVG 직접 구현
   - ⚠️ `@supabase/ssr` 추가 — 서버/클라이언트 클라이언트 분리에 필수
+- [x] `npm install @anthropic-ai/sdk` — AI 브리핑 생성 (OpenAI 대체)
 - [x] `npm install --save-dev @storybook/nextjs storybook @types/react-window`
 - [x] Storybook 초기화 (`npx storybook@latest init`)
 - [x] `npm run storybook` 정상 실행 확인
@@ -49,8 +50,8 @@
 ### 0-4. 환경 변수
 - [x] `.env.local` 파일 생성
 - [ ] `.env.local` → `.gitignore`에 포함 확인
-- [ ] `ANTHROPIC_API_KEY` 입력
-- [ ] `OPENAI_API_KEY` 입력
+- [ ] `ANTHROPIC_API_KEY` 입력 (claude-haiku-4-5 브리핑 생성용)
+  - ⚠️ `OPENAI_API_KEY` 불필요 — OpenAI 의존성 제거됨
 - [x] `NEXT_PUBLIC_SUPABASE_URL` 입력
 - [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY` 입력
 - [x] `SUPABASE_SERVICE_ROLE_KEY` 입력 ← **신규** (서버 전용, NEXT_PUBLIC_ 없음) — 템플릿 생성, 실제 값 필요
@@ -340,23 +341,37 @@
 - [x] `.news-content` 클래스 — `user-select: text` 확인
 
 ### 7-4. `lib/llm-chain.ts` 작성
-- [x] `summarizeNews(newsText)` — gpt-4o-mini 호출
-- [x] `generateBriefing(summary, holdings)` — claude-sonnet-4-6 호출
-- [x] `generateETFBriefing(newsItems, holdings, userTier)` 메인 함수
-  - [x] `userTier === 'free'` → MOCK_BRIEFING 반환
-  - [x] `userTier === 'pro'` → 실제 2단계 체이닝 호출
+- [x] ~~`summarizeNews(newsText)` — gpt-4o-mini 호출~~ → **제거** (OpenAI 의존성 완전 제거)
+- [x] ~~`generateBriefing(summary, holdings)` — claude-sonnet-4-6 호출~~ → **제거** (2단계 → 1단계 통합)
+- [x] `generateETFBriefing(newsItems, holdings)` 메인 함수 ← **재구성**
+  - [x] `@anthropic-ai/sdk` 공식 SDK 사용 (`new Anthropic({ apiKey })`)
+  - [x] `claude-haiku-4-5` 단일 호출 — 뉴스 요약 + 브리핑 생성 통합 프롬프트
+  - [x] `userTier` 인자 제거 — 무료/프로 구분 없이 모든 사용자 실제 AI 브리핑
+  - [x] 실패 시 `MOCK_BRIEFING` 폴백 반환 (`tier: 'fallback'`)
 
 ### 7-5. `app/api/ai-briefing/route.ts` 작성
 - [x] JWT 기반 `getUser()` 인증 (userId 클라이언트 수신 금지)
-- [x] Free 티어 월 5회 제한 (DB 카운트 체크)
-- [x] `generateETFBriefing` 호출
+- [x] Free 티어 월 5회 제한 (DB 카운트 체크) — 초과 시 429 + `FREE_LIMIT_EXCEEDED` 반환
+- [x] `generateETFBriefing(newsItems, holdings)` 호출 — `userTier` 인자 제거됨
+- [x] 응답에 `remaining` 필드 추가 (무료 사용자 잔여 횟수, 프로는 `null`)
 - [x] `export const maxDuration = 60` 타임아웃 설정
 
 ### 7-6. `AIBriefing` 컴포넌트
 - [x] `app/dashboard/_components/AIBriefing.tsx` — `'use client'`
-- [x] 상태: idle → summarizing → briefing → done / error
+- [x] 상태: idle → summarizing → briefing → done / error / **limit_exceeded** ← 신규
 - [x] 진행 단계 메시지 표시
+- [x] **헤더 타이틀 옆 현재 날짜(년월일) 표기** — `<time>` 시맨틱 태그 ← 신규
+- [x] **ⓘ 툴팁 아이콘** — 클릭 시 "월 5회 무료 제공" 이용 안내 노출 ← 신규
+  - [x] 영역 밖 클릭 시 자동 닫힘 (`useEffect` + `mousedown` 이벤트)
+  - [x] `aria-expanded` 접근성 적용
+- [x] **429 응답 처리** — `limit_exceeded` 상태 전환 ← 신규
+  - [x] "이번 달 무료 제공 횟수(5회) 초과" 안내 메시지 표시
+  - [x] `새로 받기` 버튼 비활성화 (`disabled`)
 - [x] `AIBriefing.stories.tsx` — Default / Empty 상태
+  - [ ] LimitExceeded 상태 story 추가 권장
+
+### 7-6-1. `MorningBriefingVideo` 날짜 표기 개선
+- [x] `pubDate` 포맷에 `year: 'numeric'` 추가 — "6월 21일" → "2026년 6월 21일"
 
 ### 7-7. `lib/supabase.ts` — 클라이언트/서버 분리
 - [x] `createClient()` — 브라우저용 (`createBrowserClient`)

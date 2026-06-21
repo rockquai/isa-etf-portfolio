@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith(p),
   )
 
-  if (isProtected && !user) {
+  if (isProtected && !user && !process.env.DEMO_MODE) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

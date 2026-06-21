@@ -74,7 +74,7 @@ export default function AIBriefing({ initialBriefing = MOCK_BRIEFING }: AIBriefi
     <section className={styles.wrapper} aria-label="AI 브리핑">
       <div className={styles.header}>
         <div className={styles.titleRow}>
-          <h2 className={styles.title}>🤖 AI 브리핑</h2>
+          <h2 className={styles.title}>🤖 AI 브리핑(월 5회 무료 제공)</h2>
           <time className={styles.date} dateTime={new Date().toISOString().slice(0, 10)}>
             {new Date().toLocaleDateString('ko-KR', {
               year: 'numeric',
