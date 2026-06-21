@@ -6,6 +6,24 @@
 
 ---
 
+## ⚠️ 작업 시 Claude에게 항상 전달할 것
+
+```
+이 프로젝트의 BE 규칙:
+1. 별도 백엔드 서버 없음 — Next.js BFF + Supabase BaaS + Vercel 서버리스만 사용
+2. Route Handler에서 userId 클라이언트 수신 절대 금지 → JWT 세션에서 추출
+3. Server Component 내부에서 /api/* HTTP 재호출 금지 → lib/ 직접 import
+4. 모든 Supabase 쿼리에 user_id 조건 필수 포함 (RLS + 코드 이중 보호)
+5. API 오류 시 반드시 Mock 폴백 반환 (시연 중단 방지)
+6. Free 티어 AI 호출 제한은 increment_ai_call DB Function RPC로만 처리 (Race Condition 방지)
+7. SUPABASE_SERVICE_ROLE_KEY는 서버 전용, 절대 코드에 하드코딩 금지
+8. 환경 변수는 .env.local에만, 절대 코드에 하드코딩 금지
+9. 뉴스 크롤링 금지 — RSS 파싱만 허용
+10. AI 비용 로깅은 fire-and-forget (.then()) — 응답 지연 방지
+11. Supabase Free 플랜 — 7일 비활성 시 일시정지, DB 백업 없음 → keep-alive + schema.sql 필수
+```
+---
+
 ## PHASE 0 — Supabase 프로젝트 세팅
 
 ### 0-1. Supabase 프로젝트 생성
@@ -27,10 +45,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
 SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
 
-ANTHROPIC_API_KEY=sk-ant-xxx...
-OPENAI_API_KEY=sk-xxx...
+ANTHROPIC_API_KEY=sk-ant-xxx...   # claude-haiku-4-5 AI 브리핑 생성
+# OPENAI_API_KEY 불필요 — OpenAI 의존성 제거됨
 
 HANKYUNG_RSS_URL=https://www.hankyung.com/feed/economy
+
+# 선택: 데모 모드 (비로그인 접근 허용 — 테스트 후 반드시 제거)
+# DEMO_MODE=true
 ```
 
 - [x] `.env.local`이 `.gitignore`에 포함되어 있는지 확인
@@ -258,22 +279,22 @@ export function createAdminClient() {
 ## PHASE 3 — Supabase Auth 설정
 
 ### 3-1. Auth Provider 설정
-- [ ] Supabase 대시보드 > Authentication > Providers
-- [ ] Google OAuth 또는 Kakao OAuth 활성화 (택1)
-- [ ] Client ID / Secret 입력
-- [ ] Redirect URL 확인: `https://{프로젝트}.supabase.co/auth/v1/callback`
+- [x] Supabase 대시보드 > Authentication > Providers
+- [x] Google OAuth 또는 Kakao OAuth 활성화 (택1)
+- [x] Client ID / Secret 입력
+- [x] Redirect URL 확인: `https://{프로젝트}.supabase.co/auth/v1/callback`
 
 ### 3-2. Auth Callback Route 작성
 - [x] `app/auth/callback/route.ts` 생성 — `exchangeCodeForSession` + `user_settings` upsert + `/dashboard` 리다이렉트
 
-- [ ] Supabase 대시보드 > Authentication > URL Configuration에 Redirect URL 등록
+- [x] Supabase 대시보드 > Authentication > URL Configuration에 Redirect URL 등록
   - 로컬: `http://localhost:3000/auth/callback`
   - 프로덕션: `https://{vercel-domain}/auth/callback`
 
 ### 3-3. 인증 미들웨어 연동 확인
 - [x] `proxy.ts`(구 `middleware.ts`)에서 Supabase 세션 기반 보호 경로 확인 — Next.js 16 컨벤션으로 파일명/함수명 변경 완료
-- [ ] 비로그인 시 `/login` 리다이렉트 동작 확인 (실기기 테스트 필요)
-- [ ] 로그인 후 `/dashboard` 리다이렉트 동작 확인 (실기기 테스트 필요)
+- [x] 비로그인 시 `/login` 리다이렉트 동작 확인 (실기기 테스트 필요)
+- [x] 로그인 후 `/dashboard` 리다이렉트 동작 확인 (실기기 테스트 필요)
 
 ---
 
@@ -463,12 +484,13 @@ supabase.from('ai_usage_logs').insert({
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY     ← Production/Preview only (클라이언트 노출 방지)
-ANTHROPIC_API_KEY
-OPENAI_API_KEY
+ANTHROPIC_API_KEY             ← claude-haiku-4-5 AI 브리핑 (OPENAI_API_KEY 대체)
 HANKYUNG_RSS_URL
+DEMO_MODE                     ← 선택사항, true 설정 시 비로그인 접근 허용 (테스트용)
 ```
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`는 Production 환경에만 등록 (브라우저 노출 방지)
+- [ ] `DEMO_MODE`는 테스트 완료 후 반드시 제거
 
 ### 8-2. vercel.json 설정 (Hobby 플랜 타임아웃 대응)
 - [ ] `vercel.json` 생성
@@ -537,6 +559,23 @@ jobs:
 
 - [x] `docs/schema.sql` 파일 생성 — 테이블 + 추가 컬럼 + RLS + DB Function 전체 포함
 
+### 9-3. ETF 전종목 목록 월간 자동 갱신 — GitHub Actions
+
+- [x] `scripts/fetch-etf-list.py` 생성
+  - 네이버 금융 API → `lib/static/etf-list.json` 자동 갱신
+  - 종목명 키워드 기반 카테고리 자동 분류
+- [x] `.github/workflows/update-etf-list.yml` 생성
+  - 매월 1일 오전 10시(KST) 자동 실행
+  - `workflow_dispatch`로 수동 실행 가능
+- [x] 첫 실행 전 로컬 테스트
+  ```bash
+  pip3 install requests
+  python3 scripts/fetch-etf-list.py
+  ```
+- [x] GitHub Actions 수동 실행(`workflow_dispatch`) 후 성공 확인
+  - Actions 탭 → `ETF 전종목 목록 월간 갱신` → `Run workflow`
+- [x] 실행 후 `lib/static/etf-list.json` 종목 수 800개 전후 확인
+
 ```
 docs/
 ├── schema.sql          ← 완료
@@ -547,7 +586,7 @@ docs/
 └── 05_BE_TASKS.md
 ```
 
-- [ ] `docs/schema.sql` Git 커밋 및 푸시
+- [x] `docs/schema.sql` Git 커밋 및 푸시
 - [ ] 복구 시나리오 셀프 테스트 — `schema.sql` 실행만으로 5분 안에 재구성 가능한지 확인
 
 ### 9-3. Mock 데이터 시연 가능 상태 유지 확인
@@ -579,22 +618,3 @@ docs/
 | 9 | Free 플랜 운영 대응 | ⏳ 진행중 (GitHub Secrets 등록 + schema.sql 커밋 필요) |
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
-
----
-
-## ⚠️ 작업 시 Claude에게 항상 전달할 것
-
-```
-이 프로젝트의 BE 규칙:
-1. 별도 백엔드 서버 없음 — Next.js BFF + Supabase BaaS + Vercel 서버리스만 사용
-2. Route Handler에서 userId 클라이언트 수신 절대 금지 → JWT 세션에서 추출
-3. Server Component 내부에서 /api/* HTTP 재호출 금지 → lib/ 직접 import
-4. 모든 Supabase 쿼리에 user_id 조건 필수 포함 (RLS + 코드 이중 보호)
-5. API 오류 시 반드시 Mock 폴백 반환 (시연 중단 방지)
-6. Free 티어 AI 호출 제한은 increment_ai_call DB Function RPC로만 처리 (Race Condition 방지)
-7. SUPABASE_SERVICE_ROLE_KEY는 서버 전용, 절대 코드에 하드코딩 금지
-8. 환경 변수는 .env.local에만, 절대 코드에 하드코딩 금지
-9. 뉴스 크롤링 금지 — RSS 파싱만 허용
-10. AI 비용 로깅은 fire-and-forget (.then()) — 응답 지연 방지
-11. Supabase Free 플랜 — 7일 비활성 시 일시정지, DB 백업 없음 → keep-alive + schema.sql 필수
-```

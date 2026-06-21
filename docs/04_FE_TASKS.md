@@ -16,6 +16,26 @@
 
 ---
 
+## ⚠️ 작업 시 Claude에게 항상 전달할 것
+
+```
+이 프로젝트의 규칙:
+1. Tailwind 사용 금지 — CSS Module + CSS Variables만 사용
+2. 상승(+) = 빨강(--color-stock-up), 하락(-) = 파랑(--color-stock-down)
+3. ETFPieChart / GoalGauge / DividendTimeline — 라이브러리 금지, 직접 구현
+4. user-select: none 전역 적용 금지
+5. animate-pulse 경고 배너 사용 금지
+6. Server Component에서 내부 /api/* HTTP 재호출 금지 → lib/ 직접 import
+7. react-window는 TransactionHistory에만 적용
+8. 모든 textarea에 maxLength={100} 필수
+9. 터치 영역 min-height: var(--spacing-touch-min) 44px 필수
+10. 모든 컴포넌트에 Storybook stories 최소 3가지 상태 작성
+11. Route Handler에서 userId 클라이언트 수신 금지 → JWT 세션에서 추출 ← 추가
+12. Server Component → Client Component로 함수 prop 전달 금지 → Server Action 사용 ← 추가
+13. recharts 설치 금지 ← 추가
+```
+---
+
 ## PHASE 0 — 프로젝트 초기 세팅
 
 ### 0-1. 프로젝트 생성
@@ -373,6 +393,30 @@
 ### 7-6-1. `MorningBriefingVideo` 날짜 표기 개선
 - [x] `pubDate` 포맷에 `year: 'numeric'` 추가 — "6월 21일" → "2026년 6월 21일"
 
+### 7-6-2. `ETFAddForm` 종목명 자동완성 (정적 JSON)
+- [x] `lib/static/etf-list.json` 생성 — 국내 ETF 전종목 정적 목록 (초기 54개 수록)
+  - 필드: `name`, `code`, `category`
+  - 카테고리: 국내주식 / 미국주식 / 배당 / 리츠 / 채권 / 섹터 / 글로벌 / 원자재
+- [x] `ETFAddForm.tsx` 자동완성 기능 추가
+  - 종목명 입력 시 실시간 필터링 (1글자부터)
+  - 최대 8개 추천 표시
+  - 항목 클릭 시 종목명 자동 입력
+  - 영역 밖 클릭 시 드롭다운 닫힘 (`onBlur` + setTimeout 처리)
+  - `aria-autocomplete`, `aria-expanded` 접근성 적용
+- [x] `ETFAddForm.module.scss` — 드롭다운 스타일 추가
+  - `.autocompleteWrapper` / `.suggestions` / `.suggestionItem`
+  - `min-height: var(--spacing-touch-min)` 터치 영역 적용
+
+### 7-6-3. ETF 목록 월간 자동 갱신 (GitHub Actions)
+- [x] `scripts/fetch-etf-list.py` 생성
+  - 네이버 금융 API (`etfItemList.nhn`) 호출 → 전종목 JSON 생성
+  - 종목명 키워드 기반 카테고리 자동 분류
+  - API 실패 시 `exit(1)` → GitHub Actions 실패 알림
+- [x] `.github/workflows/update-etf-list.yml` 생성
+  - 매월 1일 오전 10시(KST) 자동 실행 + `workflow_dispatch` 수동 실행
+  - 변경사항 없으면 커밋 생략 (`git diff --staged --quiet`)
+  - `[skip ci]` 태그로 커밋 후 CI 재트리거 방지
+
 ### 7-7. `lib/supabase.ts` — 클라이언트/서버 분리
 - [x] `createClient()` — 브라우저용 (`createBrowserClient`)
 - [x] `createServerSupabaseClient()` — 서버용 (`await cookies()`)
@@ -480,24 +524,3 @@
 | 10 | 인증 플로우 | ✅ 완료 |
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
-
----
-
-## ⚠️ 작업 시 Claude에게 항상 전달할 것
-
-```
-이 프로젝트의 규칙:
-1. Tailwind 사용 금지 — CSS Module + CSS Variables만 사용
-2. 상승(+) = 빨강(--color-stock-up), 하락(-) = 파랑(--color-stock-down)
-3. ETFPieChart / GoalGauge / DividendTimeline — 라이브러리 금지, 직접 구현
-4. user-select: none 전역 적용 금지
-5. animate-pulse 경고 배너 사용 금지
-6. Server Component에서 내부 /api/* HTTP 재호출 금지 → lib/ 직접 import
-7. react-window는 TransactionHistory에만 적용
-8. 모든 textarea에 maxLength={100} 필수
-9. 터치 영역 min-height: var(--spacing-touch-min) 44px 필수
-10. 모든 컴포넌트에 Storybook stories 최소 3가지 상태 작성
-11. Route Handler에서 userId 클라이언트 수신 금지 → JWT 세션에서 추출 ← 추가
-12. Server Component → Client Component로 함수 prop 전달 금지 → Server Action 사용 ← 추가
-13. recharts 설치 금지 ← 추가
-```
