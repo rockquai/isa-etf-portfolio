@@ -1,4 +1,5 @@
 import { fetchMorningVideo } from '@/lib/youtube'
+import MorningBriefingVideoPlayer from './MorningBriefingVideoPlayer'
 import styles from './MorningBriefingVideo.module.scss'
 
 export default async function MorningBriefingVideo() {
@@ -9,6 +10,7 @@ export default async function MorningBriefingVideo() {
   const pubDate = video.pubDate
     ? new Date(video.pubDate).toLocaleDateString('ko-KR', {
         timeZone: 'Asia/Seoul',
+        year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
@@ -25,26 +27,14 @@ export default async function MorningBriefingVideo() {
         )}
       </div>
 
-      <a
-        href={video.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={styles.card}
-        aria-label={`YouTube에서 보기: ${video.title}`}
-      >
-        <div className={styles.thumbnailWrap}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={video.thumbnail}
-            alt={video.title}
-            className={styles.thumbnail}
-            width={320}
-            height={180}
-          />
-          <div className={styles.playOverlay} aria-hidden="true">▶</div>
-        </div>
+      <div className={styles.card}>
+        <MorningBriefingVideoPlayer
+          videoId={video.videoId}
+          title={video.title}
+          thumbnail={video.thumbnail}
+        />
         <p className={styles.videoTitle}>{video.title}</p>
-      </a>
+      </div>
     </section>
   )
 }

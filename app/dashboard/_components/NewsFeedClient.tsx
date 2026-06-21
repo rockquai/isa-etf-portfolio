@@ -33,9 +33,10 @@ function NewsCard({ item }: { item: NewsItem }) {
 type NewsFeedClientProps = {
   allNews: NewsItem[]
   isMock: boolean
+  isFiltered: boolean
 }
 
-export default function NewsFeedClient({ allNews, isMock }: NewsFeedClientProps) {
+export default function NewsFeedClient({ allNews, isMock, isFiltered }: NewsFeedClientProps) {
   const [batchIndex, setBatchIndex] = useState(0)
 
   const totalBatches = Math.max(1, Math.ceil(allNews.length / PAGE_SIZE))
@@ -46,10 +47,17 @@ export default function NewsFeedClient({ allNews, isMock }: NewsFeedClientProps)
   }
 
   return (
-    <section aria-label="오늘의 경제 뉴스">
+    <section aria-label={isFiltered ? 'ETF 관련 뉴스' : '오늘의 경제 뉴스'}>
       <div className={styles.header}>
-        <h2 className={styles.title}>📰 오늘의 경제 뉴스</h2>
+        <h2 className={styles.title}>
+          {isFiltered ? '📰 ETF 관련 뉴스' : '📰 오늘의 경제 뉴스'}
+        </h2>
         <div className={styles.headerRight}>
+          {isFiltered && !isMock && (
+            <span className={styles.etfBadge} aria-label="ETF 필터 적용됨">
+              ETF
+            </span>
+          )}
           {isMock && (
             <span className={styles.mockBadge} aria-label="Mock 데이터">
               Mock

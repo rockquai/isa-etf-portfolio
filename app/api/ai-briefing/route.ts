@@ -48,11 +48,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const result = await generateETFBriefing(newsItems, holdings, userTier)
+  const result = await generateETFBriefing(newsItems, holdings)
 
   await supabase
     .from('user_settings')
     .upsert({ user_id: user.id, ai_call_count: callCount + 1 })
 
-  return NextResponse.json(result)
+  const remaining =
+    userTier === 'free' ? Math.max(0, FREE_MONTHLY_LIMIT - (callCount + 1)) : null
+
+  return NextResponse.json({ ...result, remaining })
 }

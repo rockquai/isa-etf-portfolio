@@ -1,12 +1,5 @@
+@use './reset';
 @use './tokens';
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
 body {
   touch-action: manipulation;
@@ -14,8 +7,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  max-width: 430px;
-  margin: 0 auto;
 }
 
 .news-content,

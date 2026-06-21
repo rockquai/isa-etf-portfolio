@@ -25,16 +25,16 @@ export default function Button({
       aria-label={ariaLabel}
       aria-busy={isLoading}
       className={[
-        styles.button,
-        styles[`button--${variant}`],
-        styles[`button--${size}`],
+        styles.btn_comm,
+        styles[`btn_${variant}`],
+        styles[`btn_${size}`],
         isLoading ? styles['button--loading'] : '',
         className ?? '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {isLoading ? <span className={styles.spinner} aria-hidden="true" /> : children}
+      {isLoading ? <span className={styles.ico_spinner} aria-hidden="true" /> : children}
     </button>
   )
 }

@@ -69,7 +69,7 @@ export default async function DashboardPage() {
 
   return (
     <main className={styles.main}>
-      <header className={styles.header}>
+      <section className={styles.header}>
         <div className={styles.greetingRow}>
           <p className={styles.greeting}>둥근 해 미친 거 또 떴네!☀️</p>
           <span className={styles.date}>{todayStr}</span>
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
           택배 기다리는 재미 대신,<br />
           수익률 기다리는 재미를 담아보세요!
         </p>
-      </header>
+      </section>
 
       <MyGoalBanner initialGoal={goalMessage} />
 

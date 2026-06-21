@@ -1,4 +1,4 @@
-.button {
+.btn_comm {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -21,7 +21,7 @@
   }
 }
 
-.button--primary {
+.btn_primary {
   background: var(--color-stock-up);
   color: #fff;
 
@@ -30,7 +30,7 @@
   }
 }
 
-.button--secondary {
+.btn_secondary {
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
@@ -40,7 +40,7 @@
   }
 }
 
-.button--ghost {
+.btn_ghost {
   background: transparent;
   color: var(--color-text-secondary);
 
@@ -49,22 +49,22 @@
   }
 }
 
-.button--sm {
+.btn_sm {
   padding: 0 12px;
   font-size: var(--font-size-label);
 }
 
-.button--md {
+.btn_md {
   padding: 0 20px;
   font-size: var(--font-size-body);
 }
 
-.button--lg {
+.btn_lg {
   padding: 0 28px;
   font-size: var(--font-size-title);
 }
 
-.spinner {
+.ico_spinner {
   width: 16px;
   height: 16px;
   border: 2px solid currentColor;

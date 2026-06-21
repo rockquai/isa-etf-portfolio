@@ -53,6 +53,18 @@
   color: var(--color-text-primary);
 }
 
+.etfBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #ebf8ff;
+  border: 1px solid #90cdf4;
+  border-radius: 999px;
+  font-size: var(--font-size-label);
+  color: #2b6cb0;
+  font-weight: var(--font-weight-bold);
+}
+
 .mockBadge {
   display: inline-flex;
   align-items: center;
