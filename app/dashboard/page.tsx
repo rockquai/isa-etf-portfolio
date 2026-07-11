@@ -13,8 +13,10 @@ import {
 } from '@/lib/dividend-calculator'
 import { calcIsaTaxSavings } from '@/lib/isa-tax'
 import { getGrapeBoardState, type GrapeBoardState } from '@/lib/routineSticker'
+import { calcTotalPrincipal } from '@/lib/investor-level'
 import type { ETFHolding } from '@/types/etf'
 import MyGoalBanner from './_components/MyGoalBanner'
+import LevelBadge from './_components/LevelBadge'
 import DividendTimeline from './_components/DividendTimeline'
 import DividendPipeline from './_components/DividendPipeline'
 import DividendRealizationCard from './_components/DividendRealizationCard'
@@ -25,6 +27,7 @@ import NewsFeed from './_components/NewsFeed'
 import MorningBriefingVideo from './_components/MorningBriefingVideo'
 import AIBriefing from './_components/AIBriefing'
 import DashboardInteractive from './_components/DashboardInteractive'
+import TermCard from './_components/TermCard'
 import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 import SkeletonUI from '@/components/SkeletonUI/SkeletonUI'
 import styles from './page.module.scss'
@@ -71,6 +74,7 @@ export default async function DashboardPage() {
   const monthlyDividendEstimates = calcMonthlyDividendByHolding(holdings)
   const monthlyDividendTotal = calcMonthlyDividendTotal(holdings)
   const isaTaxSavings = calcIsaTaxSavings(holdings)
+  const totalPrincipal = calcTotalPrincipal(holdings)
 
   const currentMonthlyDividend = projections[0]?.monthlyDividend ?? 0
   const percentage = Math.min((currentMonthlyDividend / GOAL_AMOUNT) * 100, 100)
@@ -99,6 +103,8 @@ export default async function DashboardPage() {
       </section>
 
       <MyGoalBanner initialGoal={goalMessage} />
+
+      <LevelBadge totalPrincipal={totalPrincipal} />
 
       <DividendTimeline projections={projections} projectionLabel={projectionLabel} />
 
@@ -130,6 +136,12 @@ export default async function DashboardPage() {
       <ErrorBoundary>
         <Suspense fallback={<SkeletonUI height="220px" borderRadius="12px" />}>
           <MorningBriefingVideo />
+        </Suspense>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <Suspense fallback={<SkeletonUI height="100px" borderRadius="12px" />}>
+          <TermCard />
         </Suspense>
       </ErrorBoundary>
 

@@ -53,3 +53,35 @@ ${newsTitles || '뉴스 없음'}
     return { result: MOCK_BRIEFING, tier: 'fallback' }
   }
 }
+
+export type GeneratedTermCard = { term: string; explanation: string }
+
+export async function generateTermCard(): Promise<GeneratedTermCard | null> {
+  try {
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 300,
+      messages: [
+        {
+          role: 'user',
+          content: `주린이(주식 초보) 대상으로 ETF·배당·ISA 투자 관련 실존 용어 1개를 골라 쉽게 설명해주세요.
+
+작성 규칙:
+- 설명은 2~3문장, 쉬운 말로
+- 다른 텍스트 없이 아래 JSON 형식만 출력
+{"term": "용어", "explanation": "설명"}`,
+        },
+      ],
+    })
+
+    const rawText = (message.content[0] as Anthropic.TextBlock).text
+    const jsonText = rawText.replace(/```json|```/g, '').trim()
+    const parsed = JSON.parse(jsonText)
+
+    if (typeof parsed.term !== 'string' || typeof parsed.explanation !== 'string') return null
+    return { term: parsed.term, explanation: parsed.explanation }
+  } catch (error) {
+    console.error('Term card generation failed:', error)
+    return null
+  }
+}

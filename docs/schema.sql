@@ -184,3 +184,22 @@ ALTER TABLE sticker_board_rewards ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "users can manage own sticker_board_rewards"
   ON sticker_board_rewards FOR ALL
   USING (auth.uid() = user_id);
+
+-- ============================================================
+-- 9. 오늘의 용어 카드 — 전체 사용자 공용 콘텐츠 (1일 1개, AI 생성 후 캐싱)
+--    INSERT/UPDATE는 서비스 롤(admin client)에서만 수행하므로 별도 정책 없음
+-- ============================================================
+
+CREATE TABLE term_cards (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  term_date   DATE NOT NULL UNIQUE,   -- KST 기준
+  term        TEXT NOT NULL,
+  explanation TEXT NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE term_cards ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anyone can read term_cards"
+  ON term_cards FOR SELECT
+  USING (true);
