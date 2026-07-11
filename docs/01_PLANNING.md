@@ -501,7 +501,25 @@ goal_amount(목표 배당액) 컬럼이 없음
 
 ---
 
-## 11. ⚠️ 기획 제약사항
+## 11. 📊 실제 구현 상태 (2026-07-11 기준)
+
+### ✅ Phase 0-2 완료 (모든 기본 기능)
+- KST 타임존 버그 수정
+- routine_stickers, sticker_board_rewards, term_cards 테이블 생성 + RLS
+- Supabase 마이그레이션 완료
+
+### ✅ Phase 3 공유하기 완료
+- SharePortfolioButton: Web Share API + clipboard fallback
+- 배당 파이프라인 + 사용자 다짐 문구 포함 공유
+
+### 🔄 용어 카드 상태 변경
+- ❌ AI 생성 기능 제거 (Anthropic API 키 발급 불필요)
+- ✅ Mock 데이터만 사용 (비용 0, 안정적)
+- 추후 AI 기능 필요 시 다시 추가 가능
+
+---
+
+## 12. ⚠️ 기획 제약사항
 
 | 항목 | 제약 | 대응 |
 |---|---|---|

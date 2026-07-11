@@ -576,6 +576,7 @@ export function getKstDate(): string {
 | 8 | 완성도 & 접근성 | ⏳ 진행중 (포도알 스토리 신규) |
 | 9 | Storybook 배포 & README | ⬜ 미시작 |
 | 10 | 인증 플로우 | ✅ 완료 |
+| 11 | Phase 2+ 추가 기능 (배당 실물화, 레벨, 공유 등) | ✅ 완료 |
 
 ### 📝 Phase 별 신규 추가 항목 (최종 검토 반영)
 
@@ -598,3 +599,69 @@ export function getKstDate(): string {
 - `ISATaxSavings.stories.tsx`
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
+
+---
+
+## PHASE 11 — Phase 2+ 추가 기능 (2026-07-11 완료)
+
+### 11-1. 배당 실물화 카드
+- [x] `DividendRealizationCard.tsx` — 배당액을 커피/치킨 개수로 환산
+- [x] `dividend-realization.ts` — 환산 로직 (1~8개 범위, 저렴한 항목 우선)
+- [x] `DividendRealizationCard.module.scss` — 중앙 정렬, 이모지 표시
+- [x] `DividendRealizationCard.stories.tsx` — Coffee/Chicken/BelowThreshold/Empty 4상태
+
+### 11-2. 투자자 레벨 배지
+- [x] `LevelBadge.tsx` — 누적 매수 원금 기준 5단계 레벨 (새싹🌱~ISA마스터🏆)
+- [x] `investor-level.ts` — `calcTotalPrincipal`, `calcInvestorLevel` 함수
+- [x] `LevelBadge.module.scss` — 진행도 게이지, 다음 레벨까지 남은 금액
+- [x] `LevelBadge.stories.tsx` — Sprout/Steady/Reliable/MaxLevel 4상태
+
+### 11-3. 배당 파이프라인 공유하기
+- [x] `SharePortfolioButton.tsx` — Web Share API + clipboard fallback (Client)
+- [x] `share-card.ts` — `generateShareText()` 함수 (3/5/10/20년 + 다짐 포함)
+- [x] `SharePortfolioButton.module.scss` — 활성 상태 피드백 (2초)
+- [x] 대시보드 DividendTimeline 옆에 배치
+
+### 11-4. 오늘의 용어 카드
+- [x] `TermCard.tsx` — Mock 데이터만 사용 (AI 생성 제거)
+- [x] `term-card.ts` — `getTodayTermCard()` 단순화 (Supabase 조회 제거)
+- [x] `lib/mock/term-card.ts` — Mock 용어 데이터
+- [x] Anthropic API 키 발급 불필요 (비용 0)
+- [x] 대시보드에 ErrorBoundary + Suspense로 배치
+
+### 11-5. 포도알 스티커 (루틴 완료 지표)
+- [x] `routine_stickers` 테이블 생성 + RLS (docs/schema.sql Section 7)
+- [x] `sticker_board_rewards` 테이블 생성 + RLS (docs/schema.sql Section 8)
+- [x] `GrapeBoard.tsx` — 30알 롤링 판 진행 게이지
+- [x] `routineSticker.ts` — `grantRoutineSticker`, `getGrapeBoardState` 함수
+- [x] `app/actions/sticker.ts` — Server Action으로 스티커 부여
+- [x] `GrapeBoard.stories.tsx` — Empty(0/30)/Partial(12/30)/Complete(30/30)
+- [x] buy_record 자동 부여 (transaction.ts에 1줄)
+
+### 11-6. ISA 절세 카운터
+- [x] `ISATaxSavings.tsx` — "올해 ISA로 아낀 세금: N원" 표시
+- [x] `isa-tax.ts` — `calcIsaTaxSavings()`, `calcProCoverageMonths()` 함수
+- [x] Pro 구독 몇 개월 커버 가능한지 CTA 추가
+- [x] `ISATaxSavings.stories.tsx` — Default/HighSavings/Empty 3상태
+
+### 11-7. 배당 파이프라인 개선
+- [x] `DividendPipeline.tsx` — 종목별 월 배당 추정치 카드
+- [x] `dividend-calculator.ts` — `calcMonthlyDividendByHolding`, `calcMonthlyDividendTotal` 추가
+- [x] `DividendPipeline.stories.tsx` — Default/Empty 2상태
+- [x] `DividendTimeline` 옆에 공유 버튼 추가
+
+---
+
+## PHASE 12 — Supabase 마이그레이션 (2026-07-11 완료)
+
+### 12-1. 타임존 버그 수정
+- [x] Section 6: `ALTER TABLE transactions` DEFAULT 변경 (KST)
+
+### 12-2. 신규 테이블 생성
+- [x] Section 7: `routine_stickers` 테이블 + RLS 정책
+- [x] Section 8: `sticker_board_rewards` 테이블 + RLS 정책  
+- [x] Section 9: `term_cards` 테이블 + RLS 정책 (공용 읽기)
+
+### 12-3. DB 마이그레이션 실행
+- [x] Supabase SQL Editor에서 Sections 6-9 실행
+- [x] "Success. No rows returned" 확인
