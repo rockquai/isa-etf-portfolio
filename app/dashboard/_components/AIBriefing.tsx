@@ -19,12 +19,16 @@ const STATUS_MSG: Record<Status, string> = {
 const TOOLTIP_TEXT =
   "AI 브리핑은 월 5회 무료 제공됩니다. '새로 받기' 버튼을 누를 때마다 1회가 차감되며, 매월 1일에 자동으로 초기화됩니다."
 
+const SAMPLE_TOOLTIP_TEXT =
+  '현재는 AI 미연동 상태로 미리 작성된 샘플 브리핑이 표시됩니다. 실제 뉴스·보유 종목이 반영되지 않습니다.'
+
 type AIBriefingProps = {
   initialBriefing?: string
 }
 
 export default function AIBriefing({ initialBriefing = MOCK_BRIEFING }: AIBriefingProps) {
   const [briefing, setBriefing] = useState(initialBriefing)
+  const [isSample, setIsSample] = useState(true)
   const [status, setStatus] = useState<Status>('done')
   const [isPending, startTransition] = useTransition()
   const [tooltipOpen, setTooltipOpen] = useState(false)
@@ -61,6 +65,7 @@ export default function AIBriefing({ initialBriefing = MOCK_BRIEFING }: AIBriefi
         if (!res.ok) throw new Error('API error')
         const data = await res.json()
         setBriefing(data.result)
+        setIsSample(data.tier !== 'ai')
         setStatus('done')
       } catch {
         setStatus('error')
@@ -75,6 +80,7 @@ export default function AIBriefing({ initialBriefing = MOCK_BRIEFING }: AIBriefi
       <div className={styles.header}>
         <div className={styles.titleRow}>
           <h2 className={styles.title}>🤖 AI 브리핑(월 5회 무료 제공)</h2>
+          {isSample && <span className={styles.sampleBadge}>샘플 브리핑</span>}
           <time className={styles.date} dateTime={new Date().toISOString().slice(0, 10)}>
             {new Date().toLocaleDateString('ko-KR', {
               year: 'numeric',
@@ -94,7 +100,7 @@ export default function AIBriefing({ initialBriefing = MOCK_BRIEFING }: AIBriefi
             </button>
             {tooltipOpen && (
               <div className={styles.tooltip} role="tooltip">
-                {TOOLTIP_TEXT}
+                {isSample ? `${SAMPLE_TOOLTIP_TEXT} ${TOOLTIP_TEXT}` : TOOLTIP_TEXT}
               </div>
             )}
           </div>

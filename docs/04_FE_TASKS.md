@@ -438,6 +438,11 @@ export function getKstDate(): string {
   - [x] `새로 받기` 버튼 비활성화 (`disabled`)
 - [x] `AIBriefing.stories.tsx` — Default / Empty 상태
   - [ ] LimitExceeded 상태 story 추가 권장
+- [x] **tier: 'fallback' 응답 시 "샘플 브리핑" 배지 + 안내 툴팁 표시** ← 신규
+  - [x] `isSample` 상태: API 응답의 `tier !== 'ai'` 기반으로 판정
+  - [x] 제목 옆 `sampleBadge` 스팬 UI 표시
+  - [x] 툴팁에 "현재는 AI 미연동 상태..." 안내 문구 추가
+  - [x] 실 API 키 연동 시 자동으로 배지 숨김(코드 변경 불필요)
 
 ### 7-6-1. `MorningBriefingVideo` 날짜 표기 개선
 - [x] `pubDate` 포맷에 `year: 'numeric'` 추가 — "6월 21일" → "2026년 6월 21일"

@@ -117,7 +117,7 @@ CREATE TABLE user_settings (
 CREATE TABLE ai_usage_logs (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  model         TEXT NOT NULL,               -- 'gpt-4o-mini' | 'claude-sonnet'
+  model         TEXT NOT NULL,               -- 'claude-haiku-4-5' (미구현)
   input_tokens  INTEGER,
   output_tokens INTEGER,
   cost_usd      NUMERIC(10,6),
@@ -365,77 +365,31 @@ const parser = new Parser({
 
 ---
 
-## PHASE 5 — LLM 체이닝 파이프라인
+## PHASE 5 — LLM 파이프라인
 
-### 5-1. `lib/llm-chain.ts` 작성
+### 5-1. `lib/llm-chain.ts` 작성 ✅ 완료
 
-- [x] `summarizeNews(newsText: string)` — gpt-4o-mini 1단계 호출
-
-```typescript
-// 목적: 뉴스 원문(~20,000토큰) → 핵심 키워드 3줄 요약(~1,000토큰)
-// 비용: ~$0.0036/회
-export async function summarizeNews(newsText: string): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      max_tokens: 500,
-      messages: [
-        {
-          role: 'system',
-          content: '당신은 경제 뉴스 요약 전문가입니다. 핵심 키워드와 ETF 관련 정보를 3줄로 요약하세요.',
-        },
-        { role: 'user', content: newsText },
-      ],
-    }),
-  })
-  const data = await response.json()
-  return data.choices[0].message.content
-}
-```
-
-- [x] `generateBriefing(summary, holdings)` — Claude Sonnet 2단계 호출
-
-```typescript
-// 목적: 요약문 + ETF 데이터 → 맞춤형 매수/매도 브리핑
-// 비용: ~$0.0105/회
-export async function generateBriefing(
-  summary: string,
-  holdings: ETFHolding[]
-): Promise<string>
-```
-
+- [x] ~~`summarizeNews(newsText)` — gpt-4o-mini 1단계~~ → **제거됨**
+- [x] ~~`generateBriefing(summary, holdings)` — Claude Sonnet 2단계~~ → **제거됨**
+- [x] `generateETFBriefing(newsItems, holdings)` — claude-haiku-4-5 단일 호출
+  - [x] @anthropic-ai/sdk 공식 SDK 사용
+  - [x] 성공: `{result: briefing, tier: 'ai'}`
+  - [x] 실패(API 오류/no key): `{result: MOCK_BRIEFING, tier: 'fallback'}`
 - [x] `MOCK_BRIEFING` 상수 정의 (면책 문구 포함)
-- [x] `generateETFBriefing(newsItems, holdings, userTier)` 메인 함수
-  - [x] `userTier === 'free'` → `MOCK_BRIEFING` 즉시 반환
-  - [x] `userTier === 'pro'` → summarizeNews → generateBriefing 순차 호출
+- [x] **userTier 인자 제거** — 전원 동일 로직 (tier 구분은 route.ts의 카운트 제한으로만 처리)
 
-### 5-2. AI 비용 로깅 (fire-and-forget)
-- [ ] `generateETFBriefing` 내 `ai_usage_logs` INSERT 추가 ← **미구현**
-- [ ] `await` 없이 `.then()` 체이닝으로 응답 지연 없이 로깅
+### 5-2. AI 비용 로깅 (미구현) 🟢 P2
 
-```typescript
-supabase.from('ai_usage_logs').insert({
-  user_id: userId,
-  model: 'gpt-4o-mini + claude-sonnet-4-6',
-  input_tokens: usage.inputTokens,
-  output_tokens: usage.outputTokens,
-  cost_usd: calcCost(usage),
-}).then()
-```
+- [ ] `ai_usage_logs` INSERT 로직 미적용 (현재 route.ts에 없음)
+- [ ] 개선 방법: `response.usage` 수집 → fire-and-forget INSERT
+- [ ] 비용 계산: `(inputTokens × $1 + outputTokens × $5) / 1,000,000`
 
-- [ ] 비용 계산 함수 `calcCost(usage)` 작성
-  - gpt-4o-mini: input $0.00000015/token, output $0.0000006/token
-  - Claude Sonnet: input $0.000003/token, output $0.000015/token
+**우선순위 낮음:** 월 5회 제한으로 인해 실제 비용 추적 긴급하지 않음
 
-### 5-3. LLM 체이닝 동작 확인
-- [ ] `userTier: 'free'` → Mock 반환 확인
-- [ ] `userTier: 'pro'` → 실제 API 호출 및 응답 확인
-- [ ] 콘솔에서 각 단계 토큰 수 로그 확인
+### 5-3. LLM 호출 동작 확인
+- [x] 전원 실제 호출 (API 키 있을 때)
+- [x] API 오류 → Mock 폴백 + tier: 'fallback' 반환
+- [x] tier 응답값에 따라 UI에서 "샘플 브리핑" 배지 표시
 
 ---
 
@@ -489,10 +443,11 @@ supabase.from('ai_usage_logs').insert({
 - [ ] 다른 userId로 데이터 접근 시도 → RLS에 의해 차단 확인
 
 ### 7-3. AI 브리핑 확인
-- [ ] Free 티어 → Mock 브리핑 즉시 반환 확인
-- [ ] Free 티어 5회 초과 → 429 응답 확인
-- [ ] Pro 티어 → 실제 LLM 체이닝 호출 + 브리핑 반환 확인
-- [ ] `ai_usage_logs` 테이블에 비용 로그 기록 확인
+- [x] 전원 실제 호출 (API 키 있을 때)
+- [x] 월 5회 초과 → 429 응답 확인
+- [x] 실패(API 키 없음 등) → tier: 'fallback' + Mock 폴백 반환 확인
+- [ ] UI에서 tier: 'fallback' 응답 시 "샘플 브리핑" 배지 + 안내 툴팁 표시 확인
+- [ ] `ai_usage_logs` 테이블 미구현 (향후 작업)
 
 ### 7-4. RSS 뉴스 확인
 - [ ] `/api/news` 정상 응답 확인
@@ -644,7 +599,7 @@ docs/
 | 2 | Supabase 클라이언트 구성 | ✅ 완료 |
 | 3 | Supabase Auth 설정 | ⏳ 진행중 (OAuth Provider 설정 + Redirect URL 등록 필요) |
 | 4 | RSS 뉴스 BFF | ✅ 완료 (실기기 테스트 필요) |
-| 5 | LLM 체이닝 파이프라인 | ⏳ 진행중 (AI 비용 로깅 미구현) |
+| 5 | LLM 파이프라인 | ✅ 완료 (단일 Haiku 4.5, AI 비용 로깅만 P2) |
 | 6 | Route Handler 구현 | ⏳ 진행중 (increment_ai_call RPC 교체 필요 — P0) |
 | 7 | 통합 테스트 | ⬜ 미시작 |
 | 8 | Vercel 배포 | ⏳ 진행중 (환경변수 확인 + vercel.json + Redirect URL 필요) |
