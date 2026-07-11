@@ -17,6 +17,7 @@ import { calcTotalPrincipal } from '@/lib/investor-level'
 import type { ETFHolding } from '@/types/etf'
 import MyGoalBanner from './_components/MyGoalBanner'
 import LevelBadge from './_components/LevelBadge'
+import SharePortfolioButton from './_components/SharePortfolioButton'
 import DividendTimeline from './_components/DividendTimeline'
 import DividendPipeline from './_components/DividendPipeline'
 import DividendRealizationCard from './_components/DividendRealizationCard'
@@ -106,7 +107,16 @@ export default async function DashboardPage() {
 
       <LevelBadge totalPrincipal={totalPrincipal} />
 
-      <DividendTimeline projections={projections} projectionLabel={projectionLabel} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ flex: 1 }}>
+          <DividendTimeline projections={projections} projectionLabel={projectionLabel} />
+        </div>
+        <SharePortfolioButton
+          projections={projections}
+          goalMessage={goalMessage}
+          totalPrincipal={totalPrincipal}
+        />
+      </div>
 
       <DividendPipeline estimates={monthlyDividendEstimates} />
 
