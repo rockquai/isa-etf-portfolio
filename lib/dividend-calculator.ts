@@ -86,3 +86,13 @@ export function calcMonthlyDividendByHolding(holdings: ETFHolding[]): MonthlyDiv
     .filter((estimate) => estimate.monthlyDividend > 0)
     .sort((a, b) => b.monthlyDividend - a.monthlyDividend)
 }
+
+/**
+ * 이번 달 배당 파이프라인 카드(DividendPipeline)와 동일한 합계를 재계산 없이 공유하기 위한 헬퍼
+ */
+export function calcMonthlyDividendTotal(holdings: ETFHolding[]): number {
+  return calcMonthlyDividendByHolding(holdings).reduce(
+    (sum, estimate) => sum + estimate.monthlyDividend,
+    0,
+  )
+}

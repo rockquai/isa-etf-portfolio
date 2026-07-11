@@ -8,6 +8,7 @@ import { MOCK_BRIEFING } from '@/lib/mock/briefing'
 import {
   calcAllProjections,
   calcMonthlyDividendByHolding,
+  calcMonthlyDividendTotal,
   getProjectionLabel,
 } from '@/lib/dividend-calculator'
 import { calcIsaTaxSavings } from '@/lib/isa-tax'
@@ -16,6 +17,7 @@ import type { ETFHolding } from '@/types/etf'
 import MyGoalBanner from './_components/MyGoalBanner'
 import DividendTimeline from './_components/DividendTimeline'
 import DividendPipeline from './_components/DividendPipeline'
+import DividendRealizationCard from './_components/DividendRealizationCard'
 import ISATaxSavings from './_components/ISATaxSavings'
 import GrapeBoard from './_components/GrapeBoard'
 import TodayImpact from './_components/TodayImpact'
@@ -67,6 +69,7 @@ export default async function DashboardPage() {
   const plusOneProjections = calcAllProjections(holdings, false, 1)
   const projectionLabel = getProjectionLabel(false, 0)
   const monthlyDividendEstimates = calcMonthlyDividendByHolding(holdings)
+  const monthlyDividendTotal = calcMonthlyDividendTotal(holdings)
   const isaTaxSavings = calcIsaTaxSavings(holdings)
 
   const currentMonthlyDividend = projections[0]?.monthlyDividend ?? 0
@@ -100,6 +103,8 @@ export default async function DashboardPage() {
       <DividendTimeline projections={projections} projectionLabel={projectionLabel} />
 
       <DividendPipeline estimates={monthlyDividendEstimates} />
+
+      <DividendRealizationCard monthlyDividendTotal={monthlyDividendTotal} />
 
       <ISATaxSavings taxSavings={isaTaxSavings} />
 

@@ -1,0 +1,34 @@
+.wrapper {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  text-align: center;
+}
+
+.text {
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+.highlight {
+  color: var(--color-brand-2);
+  font-weight: var(--font-weight-bold);
+}
+
+.emojis {
+  margin-top: 8px;
+  font-size: var(--font-size-title);
+  letter-spacing: 2px;
+}
+
+.assumption {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.empty {
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  padding: 8px 0;
+}
