@@ -1,6 +1,8 @@
 'use server'
 
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getKstDateString } from '@/lib/getKstDate'
+import { grantRoutineSticker } from '@/lib/routineSticker'
 import { revalidatePath } from 'next/cache'
 
 export async function addTransactionAction(etfId: string): Promise<{ success: boolean }> {
@@ -33,7 +35,7 @@ export async function addTransactionAction(etfId: string): Promise<{ success: bo
         etf_id: etfId,
         price,
         quantity: 1,
-        date: new Date().toISOString().slice(0, 10),
+        date: getKstDateString(),
         is_profit: price >= holding.avg_price,
       })
       .select()
@@ -50,6 +52,8 @@ export async function addTransactionAction(etfId: string): Promise<{ success: bo
   ])
 
   if (txResult.error) throw new Error(txResult.error.message)
+
+  await grantRoutineSticker(supabase, user.id, 'buy_record')
 
   revalidatePath('/dashboard')
   revalidatePath('/portfolio')

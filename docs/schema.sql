@@ -130,3 +130,57 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================
+-- 6. 타임존 버그 수정 (검토 반영)
+--    CURRENT_DATE는 DB 세션 타임존(기본 UTC) 기준이라
+--    KST 00:00~08:59 구간에 전날 날짜로 저장되는 버그가 있음
+-- ============================================================
+
+ALTER TABLE transactions
+  ALTER COLUMN date SET DEFAULT ((NOW() AT TIME ZONE 'Asia/Seoul')::date);
+
+-- ============================================================
+-- 7. 루틴 스티커 (포도알) — append-only 원장
+--    한 판 완성(30알)은 floor(count/30)로 파생, 별도 저장하지 않음
+-- ============================================================
+
+CREATE TABLE routine_stickers (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id      UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  sticker_date DATE NOT NULL,   -- KST 기준
+  source       TEXT NOT NULL CHECK (source IN ('news_read', 'briefing_view', 'buy_record', 'watch_day')),
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, sticker_date, source)  -- 멱등성: 중복 클릭/재호출 차단
+);
+
+ALTER TABLE routine_stickers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can read own routine_stickers"
+  ON routine_stickers FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "users can insert own routine_stickers for today"
+  ON routine_stickers FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND sticker_date = (NOW() AT TIME ZONE 'Asia/Seoul')::date
+  );
+
+-- ============================================================
+-- 8. 판(30알) 완성 보상 — 배지 지급 이력 (append-only, 지급 멱등성 보장)
+-- ============================================================
+
+CREATE TABLE sticker_board_rewards (
+  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id    UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  board_no   INTEGER NOT NULL,   -- 1부터 시작, floor(누적 스티커 일수 / 30)
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, board_no)
+);
+
+ALTER TABLE sticker_board_rewards ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own sticker_board_rewards"
+  ON sticker_board_rewards FOR ALL
+  USING (auth.uid() = user_id);

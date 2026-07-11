@@ -1,4 +1,4 @@
-import type { ETFHolding, DividendProjection } from '@/types/etf'
+import type { ETFHolding, DividendProjection, MonthlyDividendEstimate } from '@/types/etf'
 
 const PROJECTION_YEARS = [3, 5, 10, 20] as const
 
@@ -61,4 +61,28 @@ export function getProjectionLabel(
   if (dailyPurchase) return '연 5% 성장률 · 매일 1주 매수 시뮬레이션'
   if (monthlyPurchaseShares > 0) return `연 5% 성장률 · 월 ${monthlyPurchaseShares}주 매수 시뮬레이션`
   return '연 5% 성장률 · 현재 보유 기준 시뮬레이션'
+}
+
+/**
+ * 현재 보유 수량 기준 연간 배당금 합계 추정치 (성장률 미반영)
+ */
+export function calcAnnualDividendTotal(holdings: ETFHolding[]): number {
+  return holdings.reduce(
+    (sum, holding) => sum + holding.annualDividendPerShare * holding.quantity,
+    0,
+  )
+}
+
+/**
+ * 실제 입금 이력이 아닌, 현재 보유 수량 기준 이번 달 배당 파이프라인 추정치
+ * annualDividendPerShare × quantity ÷ 12 (성장률 미반영, 순수 현재 보유 기준)
+ */
+export function calcMonthlyDividendByHolding(holdings: ETFHolding[]): MonthlyDividendEstimate[] {
+  return holdings
+    .map((holding) => ({
+      ticker: holding.ticker,
+      monthlyDividend: Math.round((holding.annualDividendPerShare * holding.quantity) / 12),
+    }))
+    .filter((estimate) => estimate.monthlyDividend > 0)
+    .sort((a, b) => b.monthlyDividend - a.monthlyDividend)
 }

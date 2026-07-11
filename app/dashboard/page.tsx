@@ -5,10 +5,19 @@ export const dynamic = 'force-dynamic'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { MOCK_ETF_HOLDINGS } from '@/lib/mock/etf'
 import { MOCK_BRIEFING } from '@/lib/mock/briefing'
-import { calcAllProjections, getProjectionLabel } from '@/lib/dividend-calculator'
+import {
+  calcAllProjections,
+  calcMonthlyDividendByHolding,
+  getProjectionLabel,
+} from '@/lib/dividend-calculator'
+import { calcIsaTaxSavings } from '@/lib/isa-tax'
+import { getGrapeBoardState, type GrapeBoardState } from '@/lib/routineSticker'
 import type { ETFHolding } from '@/types/etf'
 import MyGoalBanner from './_components/MyGoalBanner'
 import DividendTimeline from './_components/DividendTimeline'
+import DividendPipeline from './_components/DividendPipeline'
+import ISATaxSavings from './_components/ISATaxSavings'
+import GrapeBoard from './_components/GrapeBoard'
 import TodayImpact from './_components/TodayImpact'
 import NewsFeed from './_components/NewsFeed'
 import MorningBriefingVideo from './_components/MorningBriefingVideo'
@@ -28,11 +37,13 @@ export default async function DashboardPage() {
 
   let holdings: ETFHolding[] = MOCK_ETF_HOLDINGS // 데이터 없을 때 Mock 폴백
   let goalMessage = ''
+  let grapeBoardState: GrapeBoardState = { totalDays: 0, completedBoards: 0, currentBoardFill: 0 }
 
   if (user) {
-    const [holdingsResult, settingsResult] = await Promise.all([
+    const [holdingsResult, settingsResult, grapeBoard] = await Promise.all([
       supabase.from('etf_holdings').select('*').eq('user_id', user.id).order('created_at'),
       supabase.from('user_settings').select('goal_message').eq('user_id', user.id).single(),
+      getGrapeBoardState(supabase, user.id),
     ])
 
     if (holdingsResult.data && holdingsResult.data.length > 0) {
@@ -49,11 +60,14 @@ export default async function DashboardPage() {
     }
 
     goalMessage = settingsResult.data?.goal_message ?? ''
+    grapeBoardState = grapeBoard
   }
 
   const projections = calcAllProjections(holdings)
   const plusOneProjections = calcAllProjections(holdings, false, 1)
   const projectionLabel = getProjectionLabel(false, 0)
+  const monthlyDividendEstimates = calcMonthlyDividendByHolding(holdings)
+  const isaTaxSavings = calcIsaTaxSavings(holdings)
 
   const currentMonthlyDividend = projections[0]?.monthlyDividend ?? 0
   const percentage = Math.min((currentMonthlyDividend / GOAL_AMOUNT) * 100, 100)
@@ -84,6 +98,12 @@ export default async function DashboardPage() {
       <MyGoalBanner initialGoal={goalMessage} />
 
       <DividendTimeline projections={projections} projectionLabel={projectionLabel} />
+
+      <DividendPipeline estimates={monthlyDividendEstimates} />
+
+      <ISATaxSavings taxSavings={isaTaxSavings} />
+
+      <GrapeBoard state={grapeBoardState} />
 
       <DashboardInteractive
         initialPercentage={percentage}

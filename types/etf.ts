@@ -25,6 +25,11 @@ export type DividendProjection = {
   totalShares: number
 }
 
+export type MonthlyDividendEstimate = {
+  ticker: string
+  monthlyDividend: number
+}
+
 export type NewsItem = {
   title: string
   link: string
