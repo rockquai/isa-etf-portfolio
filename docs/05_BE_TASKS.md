@@ -126,14 +126,47 @@ CREATE TABLE ai_usage_logs (
 ```
 
 ### 1-2. 추가 컬럼 (검토 반영 — 누락 컬럼)
-- [x] `etf_holdings`에 `is_profit` Generated Column 추가
+- [ ] `etf_holdings`에 `is_profit` Generated Column 추가
 
 ```sql
 ALTER TABLE etf_holdings
   ADD COLUMN is_profit BOOLEAN GENERATED ALWAYS AS (current_price >= avg_price) STORED;
 ```
 
-- [x] 테이블 4개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
+- [ ] `user_settings` 추가 컬럼
+
+```sql
+ALTER TABLE user_settings
+  ADD COLUMN goal_monthly_amount INTEGER DEFAULT 500000,  -- 월 목표 배당금
+  ADD COLUMN daily_purchase_enabled BOOLEAN DEFAULT FALSE,  -- 매일 1주 가정
+  ADD COLUMN bonus_ai_credits INTEGER DEFAULT 0;  -- 포도알 보상 크레딧
+```
+
+- [ ] `routine_stickers` 테이블 생성 (포도알)
+
+```sql
+CREATE TABLE routine_stickers (
+  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  sticker_date  DATE NOT NULL,   -- KST 기준
+  source        TEXT NOT NULL CHECK (source IN ('news_read','briefing_view','buy_record','watch_day')),
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, sticker_date, source)   -- 멱등성: 중복 클릭 차단
+);
+```
+
+- [ ] `routine_stickers` RLS 활성화 + 정책
+
+```sql
+ALTER TABLE routine_stickers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own stickers"
+  ON routine_stickers FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id AND sticker_date = (NOW() AT TIME ZONE 'Asia/Seoul')::date);
+```
+
+- [ ] 테이블 5개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
 
 ### 1-3. RLS (Row Level Security) 활성화
 - [x] 4개 테이블 RLS 활성화
@@ -607,7 +640,7 @@ docs/
 | Phase | 내용 | 상태 |
 |---|---|---|
 | 0 | Supabase 프로젝트 세팅 | ✅ 완료 |
-| 1 | Supabase 스키마 구성 | ✅ 완료 (Policies 대시보드 확인 필요) |
+| 1 | Supabase 스키마 구성 | ⏳ 진행중 (포도알 테이블 + 컬럼 추가 필요) |
 | 2 | Supabase 클라이언트 구성 | ✅ 완료 |
 | 3 | Supabase Auth 설정 | ⏳ 진행중 (OAuth Provider 설정 + Redirect URL 등록 필요) |
 | 4 | RSS 뉴스 BFF | ✅ 완료 (실기기 테스트 필요) |
@@ -616,5 +649,22 @@ docs/
 | 7 | 통합 테스트 | ⬜ 미시작 |
 | 8 | Vercel 배포 | ⏳ 진행중 (환경변수 확인 + vercel.json + Redirect URL 필요) |
 | 9 | Free 플랜 운영 대응 | ⏳ 진행중 (GitHub Secrets 등록 + schema.sql 커밋 필요) |
+
+### 🔴 P0 타임존 버그 — 즉시 처리
+
+| 항목 | 상태 | 영향 |
+|---|---|---|
+| `lib/getKstDate.ts` 작성 | ⬜ 미시작 | 매수 기록 날짜 전날로 저장됨 |
+| `app/actions/transaction.ts` 수정 | ⬜ 미시작 | 포도알 루틴 판정 1일씩 밀림 |
+| `transactions.date` DEFAULT 수정 | ⬜ 미시작 | DB 레벨에서도 UTC 기준 |
+
+### 🟡 포도알 스티커 (P1 — Phase 2주 내)
+
+| 항목 | 상태 | Phase |
+|---|---|---|
+| `routine_stickers` 테이블 + RLS | ⬜ 미시작 | 1 |
+| `addStickerAction` Server Action | ⬜ 미시작 | FE Phase 5 |
+| 자동 부여 로직 (buy_record 등) | ⬜ 미시작 | FE Phase 5-6 |
+| `GrapeBoard` 컴포넌트 | ⬜ 미시작 | FE Phase 5 |
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜

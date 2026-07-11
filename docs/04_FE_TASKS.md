@@ -85,6 +85,18 @@
 - [x] `app/error.tsx` 생성 (전역 에러 페이지)
 - [x] `app/not-found.tsx` 생성 (404 페이지)
 
+### 0-6. KST 날짜 유틸 생성 ← **P0 타임존 버그 수정**
+- [ ] `lib/getKstDate.ts` 신규 작성
+```typescript
+export function getKstDate(): string {
+  return new Date(new Date().getTime() + 9 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+}
+```
+- [ ] `app/actions/transaction.ts` — `date: new Date()...` → `date: getKstDate()` 교체
+- [ ] Supabase `transactions.date` 기본값 수정 (docs/schema.sql 참고)
+
 ---
 
 ## PHASE 1 — 디자인 토큰 & 전역 스타일
@@ -311,6 +323,28 @@
 - [x] `addTransactionAction(etfId: string)` 함수
 - [x] 서버에서 `getUser()` 기반 인증
 - [x] `transactions` INSERT + `etf_holdings` avg_price 재계산 UPDATE
+- [ ] KST 날짜 적용 — `getKstDate()` 사용
+
+### 5-12. `GrapeBoard` 컴포넌트 (포도알 스티커) ← **신규 (P1)**
+- [ ] `app/dashboard/_components/GrapeBoard.tsx` — `'use client'`
+- [ ] Props: `stickersForMonth: { date: string; source: string }[]`
+- [ ] 30개 칸 그리드 (SVG + CSS Variables)
+- [ ] 각 알에 source 기반 아이콘 표시 (news, briefing, buy, watch)
+- [ ] 전체 판에 `role="progressbar"` + `aria-label="이번 달 포도알 12/30"`
+- [ ] 클릭 시 해당 알의 출처 정보 표시 (Toast)
+- [ ] `GrapeBoard.module.css` — grid 30칸, SVG 원형 그리기
+- [ ] `GrapeBoard.stories.tsx` — Empty(0/30) / Partial(12/30) / Complete(30/30) 상태
+
+### 5-13. `app/actions/sticker.ts` Server Action ← **신규 (P1)**
+- [ ] `'use server'` 선언
+- [ ] `addStickerAction(source: 'news_read' | 'briefing_view' | 'buy_record' | 'watch_day')` 함수
+- [ ] 서버에서 `getUser()` 기반 인증
+- [ ] `routine_stickers` INSERT (UNIQUE 제약 자동 중복 차단)
+- [ ] 성공 시 `revalidatePath('/dashboard')`
+
+### 5-14. `app/actions/sticker.ts` 내 자동 부여 로직
+- [ ] `addTransactionAction` 후 자동으로 `addStickerAction('buy_record')` 호출 (Server Action chain)
+- [ ] 새로운 뉴스/브리핑 확인 후 자동 스티커 부여 (뉴스/브리핑 컴포넌트 로드 시)
 
 ---
 
@@ -337,6 +371,21 @@
 - [x] `lib/mock/etf.ts` → 대시보드 계산 로직 연결
 - [x] `lib/mock/transactions.ts` → `TransactionHistory` 연결
 - [ ] 전체 화면 스크롤 흐름 점검 (모바일 실기기 필요)
+
+### 6-4. `DividendCalendar` 컴포넌트 (배당 캘린더) ← **신규 (P1)**
+- [ ] `app/dashboard/_components/DividendCalendar.tsx` — Server Component
+- [ ] 보유 종목의 배당 입금 예정일 표시
+- [ ] 입금일 D-3 알림, 입금일 축하 애니메이션, 누적 배당 그래프 연출
+- [ ] `DividendCalendar.module.css` — 월간 달력 그리드, 입금일 강조색
+- [ ] Supabase에서 `etf_holdings`의 배당 정보 조회 (또는 Mock 데이터)
+
+### 6-5. `ISATaxSavings` 컴포넌트 (ISA 절세 카운터) ← **신규 (P1)**
+- [ ] `app/dashboard/_components/ISATaxSavings.tsx` — Server Component
+- [ ] 계산: `총 배당금 × 15.4%` (일반계좌 원천징수율)
+- [ ] 표시: "올해 ISA로 아낀 세금: 47,320원"
+- [ ] Pro 전환 CTAssistant 연결: "이 금액으로 Pro 구독 N개월 커버 가능"
+- [ ] `ISATaxSavings.module.css`
+- [ ] ISA의 차별점 설명 문구 추가 (비과세 vs 15.4%)
 
 ---
 
@@ -464,6 +513,11 @@
 - [ ] `ErrorBoundary.stories.tsx` — Normal / Error 상태 확인
 - [ ] `Toast.stories.tsx` — Success / Error 상태 확인
 
+### 8-5. 포도알 스티커 관련 Storybook 추가 ← **신규 (P1)**
+- [ ] `GrapeBoard.stories.tsx` — Empty(0/30) / Partial(12/30) / Complete(30/30) 상태
+- [ ] `DividendCalendar.stories.tsx` — Default / Empty 상태
+- [ ] `ISATaxSavings.stories.tsx` — Default / High 절세액 상태
+
 ---
 
 ## PHASE 9 — Storybook 배포 & README
@@ -511,16 +565,36 @@
 
 | Phase | 내용 | 상태 |
 |---|---|---|
-| 0 | 프로젝트 초기 세팅 | ⏳ 진행중 (실제 API Key 입력 필요) |
+| 0 | 프로젝트 초기 세팅 | ⏳ 진행중 (KST 유틸 신규) |
 | 1 | 디자인 토큰 & 전역 스타일 | ✅ 완료 |
 | 2 | TypeScript 타입 & Mock 데이터 | ✅ 완료 |
 | 3 | 공통 컴포넌트 (원자 단위) | ✅ 완료 |
 | 4 | 앱 레이아웃 뼈대 | ✅ 완료 |
-| 5 | 핵심 기능 컴포넌트 | ✅ 완료 |
-| 6 | 대시보드 화면 조립 | ✅ 완료 |
+| 5 | 핵심 기능 컴포넌트 | ⏳ 진행중 (GrapeBoard, addStickerAction 신규) |
+| 6 | 대시보드 화면 조립 | ⏳ 진행중 (배당 캘린더, ISA 절세 카운터 신규) |
 | 7 | API 연동 컴포넌트 | ✅ 완료 |
-| 8 | 완성도 & 접근성 | ⬜ 미시작 |
+| 8 | 완성도 & 접근성 | ⏳ 진행중 (포도알 스토리 신규) |
 | 9 | Storybook 배포 & README | ⬜ 미시작 |
 | 10 | 인증 플로우 | ✅ 완료 |
+
+### 📝 Phase 별 신규 추가 항목 (최종 검토 반영)
+
+**Phase 0-6: KST 타임존 버그 수정** (P0 선행 필수)
+- `lib/getKstDate.ts` 생성
+- `app/actions/transaction.ts` 수정
+
+**Phase 5: 포도알 스티커 구현**
+- `GrapeBoard.tsx` 컴포넌트 + 스토리
+- `app/actions/sticker.ts` Server Action
+- 자동 부여 로직 (매수, 뉴스 읽기, 브리핑 확인)
+
+**Phase 6: 새로운 대시보드 카드**
+- `DividendCalendar.tsx` (배당 캘린더)
+- `ISATaxSavings.tsx` (ISA 절세 카운터)
+
+**Phase 8: Storybook 추가**
+- `GrapeBoard.stories.tsx`
+- `DividendCalendar.stories.tsx`
+- `ISATaxSavings.stories.tsx`
 
 > 진행 중: ⏳ / 완료: ✅ / 미시작: ⬜
