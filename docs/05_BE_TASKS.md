@@ -61,188 +61,34 @@ HANKYUNG_RSS_URL=https://www.hankyung.com/feed/economy
 
 ## PHASE 1 — Supabase 스키마 구성
 
-> Supabase 대시보드 > SQL Editor에서 순서대로 실행
+> Supabase 대시보드 > SQL Editor에서 순서대로 실행 - docs/schema.sql
 
-### 1-1. 기본 테이블 생성
-- [x] `etf_holdings` 테이블 생성
+### 기본 테이블 생성
+- [x] `etf_holdings` ETF 보유 종목 테이블 생성
+- [x] `transactions` 거래 내역 테이블 생성
+- [x] `user_settings` 사용자 설정 테이블 생성
+- [x] 테이블 5개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
 
-```sql
-CREATE TABLE etf_holdings (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  ticker        TEXT NOT NULL,              -- 'TIGER 미국배당다우존스'
-  avg_price     NUMERIC(10,2) NOT NULL,     -- 평단가 (원)
-  current_price NUMERIC(10,2),              -- 현재가 (Mock or 입력값)
-  quantity      INTEGER NOT NULL DEFAULT 1,
-  annual_dividend_per_share NUMERIC(10,2) DEFAULT 0,
-  dividend_growth_rate      NUMERIC(4,3)  DEFAULT 0.050,  -- 5%
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
-```
+### 추가 컬럼 (검토 반영 — 누락 컬럼)
+- [x] `etf_holdings`에 `is_profit` Generated Column 추가
 
-- [x] `transactions` 테이블 생성
+### 루틴 스티커 (포도알)
+- [x] `routine_stickers` 테이블 생성 (포도알)
+- [x] `routine_stickers` RLS 활성화 + 정책\
 
-```sql
-CREATE TABLE transactions (
-  id        UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id   UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  etf_id    UUID REFERENCES etf_holdings(id) ON DELETE CASCADE,
-  price     NUMERIC(10,2) NOT NULL,     -- 매수가
-  quantity  INTEGER NOT NULL DEFAULT 1,
-  date      DATE NOT NULL DEFAULT CURRENT_DATE,
-  is_profit BOOLEAN,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
+### RLS (Row Level Security) 활성화
+- [x] 테이블 RLS 활성화
+  - `etf_holdings`
+  - `transactions`
+  - `user_settings`
+  - `routine_stickers`(2개)
+  - `sticker_board_rewards`
+  - `term_cards`
+- [x] 각 테이블 본인 데이터 접근 정책 생성 - RLS 정책 (본인 데이터만 접근)
+- [x] Supabase 대시보드 > Authentication > Policies에서 정책 생성 확인
 
-- [x] `user_settings` 테이블 생성
-
-```sql
-CREATE TABLE user_settings (
-  id                   UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id              UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-  goal_message         TEXT DEFAULT NULL,
-  goal_monthly_amount  INTEGER DEFAULT 500000,    -- 나만의 투자 다짐 문구 (최대 100자)
-  daily_purchase_enabled BOOLEAN DEFAULT FALSE,
-  user_tier            TEXT DEFAULT 'free' CHECK (user_tier IN ('free', 'pro')),
-  ai_call_count        INTEGER DEFAULT 0,         -- 이번 달 AI 호출 횟수
-  ai_call_reset_at     TIMESTAMPTZ DEFAULT NOW(),
-  created_at           TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-- [x] `ai_usage_logs` 테이블 생성
-
-```sql
-CREATE TABLE ai_usage_logs (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  model         TEXT NOT NULL,               -- 'claude-haiku-4-5' (미구현)
-  input_tokens  INTEGER,
-  output_tokens INTEGER,
-  cost_usd      NUMERIC(10,6),
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### 1-2. 추가 컬럼 (검토 반영 — 누락 컬럼)
-- [ ] `etf_holdings`에 `is_profit` Generated Column 추가
-
-```sql
-ALTER TABLE etf_holdings
-  ADD COLUMN is_profit BOOLEAN GENERATED ALWAYS AS (current_price >= avg_price) STORED;
-```
-
-- [ ] `user_settings` 추가 컬럼
-
-```sql
-ALTER TABLE user_settings
-  ADD COLUMN goal_monthly_amount INTEGER DEFAULT 500000,  -- 월 목표 배당금
-  ADD COLUMN daily_purchase_enabled BOOLEAN DEFAULT FALSE,  -- 매일 1주 가정
-  ADD COLUMN bonus_ai_credits INTEGER DEFAULT 0;  -- 포도알 보상 크레딧
-```
-
-- [ ] `routine_stickers` 테이블 생성 (포도알)
-
-```sql
-CREATE TABLE routine_stickers (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  sticker_date  DATE NOT NULL,   -- KST 기준
-  source        TEXT NOT NULL CHECK (source IN ('news_read','briefing_view','buy_record','watch_day')),
-  created_at    TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (user_id, sticker_date, source)   -- 멱등성: 중복 클릭 차단
-);
-```
-
-- [ ] `routine_stickers` RLS 활성화 + 정책
-
-```sql
-ALTER TABLE routine_stickers ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users can manage own stickers"
-  ON routine_stickers FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id AND sticker_date = (NOW() AT TIME ZONE 'Asia/Seoul')::date);
-```
-
-- [ ] 테이블 5개 전체 생성 확인 (Supabase 대시보드 > Table Editor)
-
-### 1-3. RLS (Row Level Security) 활성화
-- [x] 4개 테이블 RLS 활성화
-
-```sql
-ALTER TABLE etf_holdings   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_settings   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_usage_logs  ENABLE ROW LEVEL SECURITY;
-```
-
-- [x] 각 테이블 본인 데이터 접근 정책 생성
-
-```sql
-CREATE POLICY "users can manage own etf_holdings"
-  ON etf_holdings FOR ALL
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "users can manage own transactions"
-  ON transactions FOR ALL
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "users can manage own settings"
-  ON user_settings FOR ALL
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "users can manage own ai_usage_logs"
-  ON ai_usage_logs FOR ALL
-  USING (auth.uid() = user_id);
-```
-
-- [ ] Supabase 대시보드 > Authentication > Policies에서 정책 4개 생성 확인
-
-### 1-4. DB Function 생성 — AI 호출 Race Condition 방지 (P0)
-- [x] `increment_ai_call` 함수 생성
-
-```sql
-CREATE OR REPLACE FUNCTION increment_ai_call(p_user_id UUID, p_limit INT)
-RETURNS TABLE(allowed BOOLEAN, new_count INT) AS $$
-DECLARE
-  v_count    INT;
-  v_tier     TEXT;
-  v_reset_at TIMESTAMPTZ;
-BEGIN
-  SELECT ai_call_count, user_tier, ai_call_reset_at
-  INTO v_count, v_tier, v_reset_at
-  FROM user_settings
-  WHERE user_id = p_user_id
-  FOR UPDATE;  -- 행 잠금으로 동시 요청 방지
-
-  -- 월 초기화
-  IF v_reset_at < date_trunc('month', NOW()) THEN
-    v_count := 0;
-    UPDATE user_settings
-    SET ai_call_count = 0, ai_call_reset_at = NOW()
-    WHERE user_id = p_user_id;
-  END IF;
-
-  IF v_tier = 'pro' OR v_count < p_limit THEN
-    UPDATE user_settings
-    SET ai_call_count = v_count + 1
-    WHERE user_id = p_user_id;
-    RETURN QUERY SELECT TRUE, v_count + 1;
-  ELSE
-    RETURN QUERY SELECT FALSE, v_count;
-  END IF;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
-
-- [ ] SQL Editor에서 함수 테스트 실행
-
-```sql
--- 테스트: 정상 케이스
-SELECT * FROM increment_ai_call('00000000-0000-0000-0000-000000000000', 5);
-```
+### [TODO-추후개발] DB Function 생성 — AI 호출 Race Condition 방지 (P0)
+- [] `increment_ai_call` 함수 생성
 
 ---
 
@@ -310,7 +156,6 @@ export function createAdminClient() {
 ---
 
 ## PHASE 3 — Supabase Auth 설정
-
 ### 3-1. Auth Provider 설정
 - [x] Supabase 대시보드 > Authentication > Providers
 - [x] Google OAuth 또는 Kakao OAuth 활성화 (택1)
@@ -332,7 +177,6 @@ export function createAdminClient() {
 ---
 
 ## PHASE 4 — RSS 뉴스 BFF
-
 ### 4-1. `lib/news.ts` 작성
 - [x] `rss-parser` import
 - [x] Parser 인스턴스 — timeout, User-Agent, Accept 헤더 설정
@@ -359,16 +203,14 @@ const parser = new Parser({
 - [ ] 에러 시 500 응답 처리 확인
 
 ### 4-3. 뉴스 BFF 동작 확인
-- [ ] `npm run dev` 후 `GET /api/news` 응답 확인
-- [ ] 한경 RSS 정상 파싱 확인 (`isMock: false`)
-- [ ] RSS URL 의도적 오류 → Mock 폴백 동작 확인 (`isMock: true`)
+- [x] `npm run dev` 후 `GET /api/news` 응답 확인
+- [x] 한경 RSS 정상 파싱 확인 (`isMock: false`)
+- [x] RSS URL 의도적 오류 → Mock 폴백 동작 확인 (`isMock: true`)
 
 ---
 
 ## PHASE 5 — LLM 파이프라인
-
 ### 5-1. `lib/llm-chain.ts` 작성 ✅ 완료
-
 - [x] ~~`summarizeNews(newsText)` — gpt-4o-mini 1단계~~ → **제거됨**
 - [x] ~~`generateBriefing(summary, holdings)` — Claude Sonnet 2단계~~ → **제거됨**
 - [x] `generateETFBriefing(newsItems, holdings)` — claude-haiku-4-5 단일 호출
@@ -379,7 +221,6 @@ const parser = new Parser({
 - [x] **userTier 인자 제거** — 전원 동일 로직 (tier 구분은 route.ts의 카운트 제한으로만 처리)
 
 ### 5-2. AI 비용 로깅 (미구현) 🟢 P2
-
 - [ ] `ai_usage_logs` INSERT 로직 미적용 (현재 route.ts에 없음)
 - [ ] 개선 방법: `response.usage` 수집 → fire-and-forget INSERT
 - [ ] 비용 계산: `(inputTokens × $1 + outputTokens × $5) / 1,000,000`
@@ -394,9 +235,7 @@ const parser = new Parser({
 ---
 
 ## PHASE 6 — Route Handler 구현
-
 ### 6-1. `app/api/ai-briefing/route.ts` 작성 (P0 보안 필수)
-
 - [x] `export const maxDuration = 60` route segment config 추가 (Vercel 타임아웃 대응)
 - [x] ⚠️ **userId JWT 추출** — `supabase.auth.getUser()`로 서버에서 추출 완료
 - [ ] ⚠️ Free 티어 제한 — `increment_ai_call` RPC 호출로 교체 필요 ← **현재 비원자적 SELECT→UPDATE 방식 사용 중 (Race Condition P0 미해결)**
@@ -432,9 +271,9 @@ const parser = new Parser({
 ## PHASE 7 — 통합 테스트
 
 ### 7-1. 인증 플로우 확인
-- [ ] 소셜 로그인 성공 → `/dashboard` 리다이렉트
-- [ ] 비로그인 상태 `/dashboard` 직접 접근 → `/login` 리다이렉트
-- [ ] 로그인 후 `user_settings` row 자동 생성 확인 (Supabase Table Editor)
+- [x] 소셜 로그인 성공 → `/dashboard` 리다이렉트
+- [x] 비로그인 상태 `/dashboard` 직접 접근 → `/login` 리다이렉트
+- [x] 로그인 후 `user_settings` row 자동 생성 확인 (Supabase Table Editor)
 - [ ] 로그아웃 후 세션 삭제 확인
 
 ### 7-2. ETF CRUD 확인
@@ -520,20 +359,38 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    - cron: '0 9 */5 * *'  # 5일마다 오전 9시 실행 (7일 한도 안전 마진)
-  workflow_dispatch:         # 수동 실행 가능
+    # 매일 오전 9시 17분 KST(UTC 00:17)에 실행합니다.
+    # GitHub Actions 혼잡이 잦은 정각을 피해 예약합니다.
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+
     steps:
-      - name: Ping Supabase
+      - name: Query Supabase database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -s \
-            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/user_settings?select=id&limit=1" \
-            -H "apikey: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}"
-          echo "Supabase ping 완료: $(date)"
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --get "${SUPABASE_URL}/rest/v1/user_settings" \
+            --data-urlencode "select=id" \
+            --data-urlencode "limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
+
+          echo
+          echo "Supabase database query completed"
 ```
 
 - [ ] GitHub 레포 > Settings > Secrets > Actions에 Secrets 2개 등록
@@ -578,7 +435,6 @@ docs/
 - [ ] 복구 시나리오 셀프 테스트 — `schema.sql` 실행만으로 5분 안에 재구성 가능한지 확인
 
 ### 9-3. Mock 데이터 시연 가능 상태 유지 확인
-
 - [x] `lib/mock/etf.ts` — 5개 종목 Mock 데이터 유지
 - [x] `lib/mock/transactions.ts` — 50개 거래 내역 Mock
 - [x] `lib/mock/news.ts` — `[Mock]` 접두사 포함 뉴스 5개
